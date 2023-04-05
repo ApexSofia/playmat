@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Playmat for role playing games</title>
+		<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
+		<link rel="stylesheet" type="text/css" href="./style.css">
+		<script>
+			$(function(){
+				$("#createButton").on("click",function(){
+					try { $("#joinDialog").dialog("close"); } catch(e) {} ;
+					$("#createDialog").dialog({
+						title: 'Create new playmat',
+						show: { 
+							effect: "fadeIn", duration: 600 
+						},
+						buttons: [{
+							text:'Create',
+							modal: true,
+							click: function() {
+							}
+						}]
+					});
+				});
+				$("#joinButton").on("click",function(){
+					try { $("#createDialog").dialog("close"); } catch(e) {} ;
+					$("#joinDialog").dialog({
+						title: 'Join an existing playmat',
+						show: { 
+							effect: "fadeIn", duration: 600 
+						},
+						buttons: [{
+							text:'Join',
+							modal: true,
+							click: function() {
+							}
+						}]
+					});
+					$('#joinSpinner').show();
+					$('#joinList').empty();
+					$.get('/getAllPlaymats',function(data){
+						$('#joinSpinner').hide();
+						var dat = JSON.parse(data);
+						$('#joinList').empty();
+						for (var i = 0 ; i < dat.playmats.length ; i++) {
+							var name = dat.playmats[i].name ;
+							$('#joinList').append('<input type="radio" '+
+							                             'name="playmatChoice" '+
+														 'value="'+name+'">'+name+
+												  '</input><br/>');
+						}
+					});
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<div class="menuCenter">
+			<button class="coolButton" id="createButton">Create a new playmat</button>
+			<button class="coolButton" id="joinButton"  >Join an existing playmat</button>
+		</div>
+		
+		<form class="dialog" id="createDialog" style="display: none">
+			<label for="playmatName">Playmat name</label><br/>
+			<input name="playmatName"><br/><br/>
+			<label for="playmatPass">Password</label><br/>
+			<input name="playmatPass" type="password"><br/><br/>
+			<label for="playerName">Player name</label><br/>
+			<input name="playerName"><br/><br/>
+		</form>
+		
+		<form class="dialog" id="joinDialog" style="display: none">
+			<label for="playmatChoice">Playmat name</label><br/><br/>
+			<div id="joinList">
+			</div>
+			<img id="joinSpinner" src="loader.gif" class="spinner"/><br/>
+			<label for="joinPass">Password</label><br/>
+			<input name="joinPass" type="password"><br/><br/>
+			<label for="joinPlayer">Player name</label><br/>
+			<input name="joinPlayer">
+		</form>
+	</body>
+</html>

@@ -1,0 +1,33 @@
+body {
+	background-image: url("nebula.jpg") ;
+	background-color: black ;
+	background-repeat: no-repeat;
+}
+
+.menuCenter {
+	margin: auto;
+	width: fit-content;
+	height: fit-content;
+}
+
+.coolButton {
+	padding: 15px 40px;
+	font-size: 18px;
+	color: white;
+	background-color: black;
+	border: none;
+	margin: 10px;
+	cursor: pointer;
+	box-shadow: 5px 5px 10px #553399;
+}
+
+.coolButton:hover {
+	background-color: #2e528c ;
+}
+
+.spinner {
+	width:  40px; 
+	height: 40px;
+	margin: auto;
+	display: block;
+}
