@@ -7,6 +7,16 @@
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
 		<script>
+			check = function (fields) {
+				for (var i = 0 ; i < fields.length ; i++) {
+					var text = $('input[name='+fields[i]+']').val() ;
+					if (text == undefined || text == '') {
+						return false ;
+					}
+				}
+				return true ;
+			}
+			
 			$(function(){
 				$("#createButton").on("click",function(){
 					try { $("#joinDialog").dialog("close"); } catch(e) {} ;
@@ -19,6 +29,15 @@
 							text:'Create',
 							modal: true,
 							click: function() {
+								if (check(['playmatName','playmatPass','playerName'])) {
+									$.post('/createPlaymat', 
+										{ user: $('input[name=playmatName]').val(), password: $('input[name=playmatPass]') },
+										function (data) {
+											alert(data);
+										});
+								} else {
+									alert('Incomplete information');
+								}
 							}
 						}]
 					});
@@ -34,6 +53,7 @@
 							text:'Join',
 							modal: true,
 							click: function() {
+								
 							}
 						}]
 					});
