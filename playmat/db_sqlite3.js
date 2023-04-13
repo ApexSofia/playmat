@@ -74,7 +74,6 @@ class DB_sqlite3 {
 	checkPassword(name, password, callback) {
 		var statement = this.playmatCreate ;
 		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name='"+name+"' AND password='"+password+"'" ; 
-		console.log(checkPlaymat);
 		this.db.serialize(() => {
 			try {
 				this.db.run(statement);
