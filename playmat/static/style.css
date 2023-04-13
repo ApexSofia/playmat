@@ -1,3 +1,8 @@
+@font-face {
+    font-family: retroGaming;
+    src: url(RetroGaming.ttf);
+}
+
 body {
 	background-image: url("nebula.jpg") ;
 	background-color: black ;
@@ -30,4 +35,35 @@ body {
 	height: 40px;
 	margin: auto;
 	display: block;
+}
+
+.hamburguer {
+	border: 1px solid #666666;
+	border-radius: 6px ;
+	background-color: black;
+	color: white;
+	display: inline-block;
+	padding: 5px 10px 7px 10px;
+	font-weight: bold ;
+	cursor: pointer;
+}
+
+.ui-widget {
+
+}
+
+.menuSelection {
+	font-family: retroGaming;
+	font-size: 24px;
+	padding-left: 70px;
+	min-height: 33px;
+	background: none;
+	cursor: pointer;
+	text-shadow: 4px 2px #444444;
+}
+
+.menuSelection:hover {
+	background-image: url("hand.png") ;
+	background-repeat: no-repeat;
+	    text-shadow: 4px 2px #4444AA;
 }

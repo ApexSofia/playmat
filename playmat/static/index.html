@@ -4,43 +4,11 @@
 		<title>Playmat for role playing games</title>
 		<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+		<script src="./helper.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script>
-			betterAlert = function(message, title) {
-				if (!title)
-					title = 'Alert';
-				if (!message)
-					message = 'No Message to Display.';
-
-				$('<div></div>').html(message).dialog({
-					title: title,
-					resizable: false,
-					modal: true,
-					buttons: {
-						'Ok': function()  {
-							$(this).dialog('close');
-						}
-					}
-				});
-			}
-			
-			check = function (fields) {
-				for (var i = 0 ; i < fields.length ; i++) {
-					var text ;
-					if ($('input[name='+fields[i]+']').attr('type') == 'radio') {
-						text = $('input[name='+fields[i]+']:checked').val() ;
-					} else {
-						text = $('input[name='+fields[i]+']').val() ;
-					}
-					if (text == undefined || text == '') {
-						return false ;
-					}
-				}
-				return true ;
-			}
-			
 			$(function(){
 				$("#createButton").on("click",function(){
 					try { $("#joinDialog").dialog("close"); } catch(e) {} ;
@@ -53,17 +21,18 @@
 							text:'Create',
 							modal: true,
 							click: function() {
-								if (check(['playmatName','playmatPass','playerName'])) {
+								if (check(['createName','createPass','createUser'])) {
 									$.post('/createPlaymat', 
 										{ 
-											playmat:  $('input[name=playmatName]').val(), 
-											password: $('input[name=playmatPass]').val()
+											playmat:  $('#createName').val(), 
+											password: $('#createPass').val()
 										},
 										function (data) {
 											data = JSON.parse(data);
 											if (data.success == false) {
 												betterAlert(data.error);
 											} else {
+												$('#createDialog').submit();
 											}
 										});
 								} else {
@@ -83,17 +52,18 @@
 						buttons: [{
 							text:'Join',
 							click: function() {
-								if (check(['joinPlaymat','joinPass','joinPlayer'])) {
+								if (check(['joinPlaymat','joinPass','joinUser'])) {
 									$.post('/checkPassword', 
 										{ 
-											playmat:  $('input[name=joinPlaymat]').val(), 
-											password: $('input[name=joinPass]').val()
+											playmat:  $('#joinPlaymat').val(), 
+											password: $('#joinPass').val()
 										},
 										function (data) {
 											data = JSON.parse(data);
 											if (data.success == false) {
 												betterAlert(data.error);
 											} else {
+												$('#joinDialog').submit();
 											}
 										});
 								} else {
@@ -110,10 +80,14 @@
 						$('#joinList').empty();
 						for (var i = 0 ; i < dat.playmats.length ; i++) {
 							var name = dat.playmats[i].name ;
-							$('#joinList').append('<input type="radio" '+
-							                             'name="joinPlaymat" '+
-														 'value="'+name+'">'+name+
-												  '</input><br/>');
+							var html = '<input type="radio" ' ;
+							if (i == 0) {
+								html = html + 'id="joinPlaymat" ';
+							}
+							html = html +     'name="playmatName" '+
+											  'value="'+name+'">'+name+
+									   '</input><br/>'
+							$('#joinList').append(html);
 						}
 					});
 				});
@@ -126,24 +100,24 @@
 			<button class="coolButton" id="joinButton"  >Join an existing playmat</button>
 		</div>
 		
-		<form class="dialog" id="createDialog" style="display: none">
-			<label for="playmatName">Playmat name</label><br/>
-			<input name="playmatName"><br/><br/>
-			<label for="playmatPass">Password</label><br/>
-			<input name="playmatPass" type="password"><br/><br/>
-			<label for="playerName">Player name</label><br/>
-			<input name="playerName"><br/><br/>
+		<form class="dialog" id="createDialog" style="display: none" method="post" action="table.html">
+			<label for="createName">Playmat name</label><br/>
+			<input id ="createName" name="playmatName"><br/><br/>
+			<label for="createPass">Password</label><br/>
+			<input id ="createPass" name="playmatPass" type="password"><br/><br/>
+			<label for="createUser">Player name</label><br/>
+			<input id ="createUser" name="playerName"><br/><br/>
 		</form>
 		
-		<form class="dialog" id="joinDialog" style="display: none">
-			<label for="joinPlaymat">Playmat name</label><br/><br/>
+		<form class="dialog" id="joinDialog" style="display: none" method="post" action="table.html">
+			<label for="joinList">Playmat name</label><br/><br/>
 			<div id="joinList">
 			</div>
 			<img id="joinSpinner" src="loader.gif" class="spinner"/><br/>
 			<label for="joinPass">Password</label><br/>
-			<input name="joinPass" type="password"><br/><br/>
-			<label for="joinPlayer">Player name</label><br/>
-			<input name="joinPlayer">
+			<input id ="joinPass" name="playmatPass" type="password"><br/><br/>
+			<label for="joinUser">Player name</label><br/>
+			<input id ="joinUser" name="playerName">
 		</form>
 	</body>
 </html>

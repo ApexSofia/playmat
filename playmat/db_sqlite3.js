@@ -27,6 +27,7 @@ class DB_sqlite3 {
 	}
 	
 	queryPlaymatList(callback) {
+		console.log('Executing queryPlaymatList...');
 		var statement = this.playmatCreate ;
 		var res = { success: true, playmats: [] } ;
 		this.db.serialize(() => {
@@ -45,10 +46,10 @@ class DB_sqlite3 {
 			} catch (exception) { this.errorHandler('queryPlaymatList exception')(exception)}
 		});
 		this.close();
-		return res ;
 	}
 	
 	createPlaymat(name, password, callback) {
+		console.log('Executing createPlaymat...');
 		var statement = this.playmatCreate ;
 		var insertPlaymat = "INSERT INTO playmat_list (creation, name, password) VALUES (DateTime('now'),'"+name+"','"+password+"')" ; 
 		this.db.serialize(() => {
@@ -72,6 +73,7 @@ class DB_sqlite3 {
 	}
 	
 	checkPassword(name, password, callback) {
+		console.log('Executing checkPassword...');
 		var statement = this.playmatCreate ;
 		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name='"+name+"' AND password='"+password+"'" ; 
 		this.db.serialize(() => {
@@ -91,6 +93,12 @@ class DB_sqlite3 {
 				});
 			} catch (exception) { this.errorHandler('checkPassword exception')(exception)}
 		});
+		this.close();
+	}
+	
+	joinPlaymat(name, password, user, callback) {
+		console.log('Executing joinPlaymat...');
+		callback({ success: true, id: 13});
 		this.close();
 	}
 };

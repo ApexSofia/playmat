@@ -4,13 +4,57 @@
 		<title>Playmat for role playing games</title>
 		<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+		<script src="./helper.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script>
-		
+			$(function() {
+				var id = $('#playmatId').val();
+				if (id == -1) {
+					betterAlert('An error has ocurrerd, redirecting to main screen', 'Error', function(){
+						window.location.href = 'index.html' ;
+					});
+				} else {
+					$('#mainMenu').dialog({
+						title: 'Main menu',
+						autoOpen: false,
+						width: 380,
+						position: { 
+							my: "left top+5", 
+							at: "left bottom", 
+							of: $('#hamburguer') 
+						},
+						show: {
+							effect: "blind",
+							duration: 500
+						},
+						hide: {
+							effect: "blind",
+							duration: 500
+						}
+					});
+					$('#hamburguer').on().click(function() {
+						var isOpen = $("#mainMenu").dialog("isOpen");
+						if (!isOpen) {
+							$('#mainMenu').dialog('open');
+						} else {
+							$('#mainMenu').dialog('close');
+						}
+					});
+				}
+			});
 		</script>
 	</head>
 	<body>
+		<input id="playmatId" type="hidden" value="-1"/>
+		<div class="hamburguer" id="hamburguer">&#9776;</div>
+		<div class="dialog" id="mainMenu" style="display: none">
+			<div class="menuSelection">New background</div>
+			<div class="menuSelection">Load token</div>
+			<div class="menuSelection">Open library</div>
+			<div class="menuSelection">Destroy playmat</div>
+			<div class="menuSelection">Exit</div>
+		</div>
 	</body>
 </html>

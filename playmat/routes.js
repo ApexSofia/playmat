@@ -6,4 +6,5 @@ module.exports = function(router){
 	router.post('/joinPlaymat',    controller.joinPlaymat);
 	router.post('/loadObject',     controller.loadObject);
 	router.post('/removePlaymat',  controller.removePlaymat);
+	router.post('/table.html',     controller.table);
 };

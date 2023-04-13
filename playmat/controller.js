@@ -1,4 +1,5 @@
 const DB = require ('./db_sqlite3');
+const fs = require('fs');
 
 //import { DB_sqlite3 } from "./db_sqlite3" ;
 
@@ -36,3 +37,17 @@ exports.removePlaymat = function(req,res) {
 	res.send('');
 };
 
+exports.table = function(req,res) {
+	var db = new DB();
+	db.joinPlaymat(req.body.playmatName, req.body.playmatPass, req.body.playerName, (obj) => {
+		fs.readFile('./static/table.html', 'utf8', (err, data) => {
+			if (err) {
+				res.send(err);
+			} else {
+				data= data.replace('<input id="playmatId" type="hidden" value="-1"/>',
+				                   '<input id="playmatId" type="hidden" value="'+obj.id+'"/>');
+				res.end(data);
+			}
+		});
+	});
+}
