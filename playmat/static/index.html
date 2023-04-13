@@ -6,10 +6,16 @@
 		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
+		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script>
 			check = function (fields) {
 				for (var i = 0 ; i < fields.length ; i++) {
-					var text = $('input[name='+fields[i]+']').val() ;
+					var text ;
+					if ($('input[name='+fields[i]+']').attr('type') == 'radio') {
+						text = $('input[name='+fields[i]+']:checked').val() ;
+					} else {
+						text = $('input[name='+fields[i]+']').val() ;
+					}
 					if (text == undefined || text == '') {
 						return false ;
 					}
@@ -31,7 +37,10 @@
 							click: function() {
 								if (check(['playmatName','playmatPass','playerName'])) {
 									$.post('/createPlaymat', 
-										{ user: $('input[name=playmatName]').val(), password: $('input[name=playmatPass]') },
+										{ 
+											playmat:  $('input[name=playmatName]').val(), 
+											password: $('input[name=playmatPass]').val()
+										},
 										function (data) {
 											alert(data);
 										});
@@ -53,7 +62,18 @@
 							text:'Join',
 							modal: true,
 							click: function() {
-								
+								if (check(['joinPlaymat','joinPass','joinPlayer'])) {
+									$.post('/checkPassword', 
+										{ 
+											playmat:  $('input[name=joinPlaymat]').val(), 
+											password: $('input[name=joinPass]').val()
+										},
+										function (data) {
+											alert(data);
+										});
+								} else {
+									alert('Incomplete information');
+								}
 							}
 						}]
 					});
@@ -66,7 +86,7 @@
 						for (var i = 0 ; i < dat.playmats.length ; i++) {
 							var name = dat.playmats[i].name ;
 							$('#joinList').append('<input type="radio" '+
-							                             'name="playmatChoice" '+
+							                             'name="joinPlaymat" '+
 														 'value="'+name+'">'+name+
 												  '</input><br/>');
 						}
@@ -91,7 +111,7 @@
 		</form>
 		
 		<form class="dialog" id="joinDialog" style="display: none">
-			<label for="playmatChoice">Playmat name</label><br/><br/>
+			<label for="joinPlaymat">Playmat name</label><br/><br/>
 			<div id="joinList">
 			</div>
 			<img id="joinSpinner" src="loader.gif" class="spinner"/><br/>
