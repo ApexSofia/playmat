@@ -8,6 +8,7 @@ routes(router);
 app.use(express.json());
 app.use(express.urlencoded({extended:false}));
 app.use(express.static('static'));
+app.use('/assets', express.static('assets'))
 app.use('/', router);
 
 app.listen(port, function() {

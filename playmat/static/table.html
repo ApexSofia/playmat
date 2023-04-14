@@ -10,38 +10,80 @@
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script>
 			$(function() {
+				var processBoard = function(objects){
+					for (var i = 0 ; i < objects.length ; i++) {
+						var obj = objects[i] ;
+						if (obj.type == 'background') {
+							$('body').css('background-image','none');
+							$('body').css('background-color','#000000');
+							if (!exists('object_'+obj.rowid)) {
+								var name = obj.name ;
+								var img = '<img '
+								if (obj.name.indexOf('http://') == 0 || obj.name.indexOf('https://') == 0) {
+									img = img + 'src="'+obj.name+'" ';
+								} else {
+									img = img + 'src="./assets/'+obj.name+'" ';
+								}
+								img = img + 'id="object_'+obj.rowid+'" style="position:absolute; left:0px; top:0px">' ;
+								$('body').append(img);
+							}
+						}
+					}
+				};
+				
+				var menuTemplate = {
+					autoOpen: false,
+					width: 410,
+					show: {
+						effect: "blind",
+						duration: 500
+					},
+					hide: {
+						effect: "blind",
+						duration: 500
+					}
+				};
+			
 				var id = $('#playmatId').val();
 				if (id == -1) {
 					betterAlert('An error has ocurrerd, redirecting to main screen', 'Error', function(){
 						window.location.href = 'index.html' ;
 					});
 				} else {
-					$('#mainMenu').dialog({
+					processBoard(JSON.parse($('#initialData').val()));
+				
+					$('#mainMenu').dialog($.extend(true,{
 						title: 'Main menu',
-						autoOpen: false,
-						width: 380,
 						position: { 
 							my: "left top+5", 
 							at: "left bottom", 
 							of: $('#hamburguer') 
 						},
-						show: {
-							effect: "blind",
-							duration: 500
-						},
-						hide: {
-							effect: "blind",
-							duration: 500
-						}
-					});
+					}, menuTemplate));
+					$('div[aria-describedby=mainMenu] div.ui-dialog-titlebar').hide();
+					
+					$('#libraryMenu').dialog($.extend(true,{
+						position: { 
+							my: "left-5 top+9", 
+							at: "left bottom", 
+							of: $('#mainMenu') 
+						},	
+					}, menuTemplate));
+					$('div[aria-describedby=libraryMenu] div.ui-dialog-titlebar').hide();
+					
 					$('#hamburguer').on().click(function() {
-						var isOpen = $("#mainMenu").dialog("isOpen");
-						if (!isOpen) {
-							$('#mainMenu').dialog('open');
-						} else {
-							$('#mainMenu').dialog('close');
-						}
+						toggleMenu('mainMenu');
 					});
+					$('#newBackgroundButton').on().click(function (){
+						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a background', 'File upload', { type: 'background', playmat: id }, function(){
+							$('#mainMenu').dialog('close');
+							$('#libraryMenu').dialog('close');
+						});
+					});
+					$('#openLibraryButton').on().click(function (){
+						toggleMenu('libraryMenu');
+					});	
+					
 				}
 			});
 		</script>
@@ -50,11 +92,15 @@
 		<input id="playmatId" type="hidden" value="-1"/>
 		<div class="hamburguer" id="hamburguer">&#9776;</div>
 		<div class="dialog" id="mainMenu" style="display: none">
-			<div class="menuSelection">New background</div>
-			<div class="menuSelection">Load token</div>
-			<div class="menuSelection">Open library</div>
-			<div class="menuSelection">Destroy playmat</div>
-			<div class="menuSelection">Exit</div>
+			<div class="menuSelection" id="newBackgroundButton"    >New background</div>
+			<div class="menuSelection" id="loadTokenButton"        >Load token</div>
+			<div class="menuSelection" id="openLibraryButton"      >Open library</div>
+			<div class="menuSelection" id="destroyPlaymatButton"   >Destroy playmat</div>
+			<div class="menuSelection" id="exitButton"             >Exit</div>
+		</div>
+		<div class="dialog" id="libraryMenu" style="display: none" parentMenu="mainMenu">
+			<div class="menuSelection" id="backgroundLibraryButton">Background library</div>
+			<div class="menuSelection" id="tokenLibraryButton"     >Token library</div>
 		</div>
 	</body>
 </html>

@@ -46,6 +46,10 @@ body {
 	padding: 5px 10px 7px 10px;
 	font-weight: bold ;
 	cursor: pointer;
+	z-index: 12;
+	position: fixed;
+	left: 10px;
+	top: 10px;
 }
 
 .ui-widget {
@@ -56,7 +60,7 @@ body {
 	font-family: retroGaming;
 	font-size: 24px;
 	padding-left: 70px;
-	min-height: 33px;
+	min-height: 43px;
 	background: none;
 	cursor: pointer;
 	text-shadow: 4px 2px #444444;
@@ -65,5 +69,15 @@ body {
 .menuSelection:hover {
 	background-image: url("hand.png") ;
 	background-repeat: no-repeat;
-	    text-shadow: 4px 2px #4444AA;
+	  text-shadow: 4px 2px #4444AA;
+}
+
+.customBackground {
+	position: absolute;
+	left: 0px ;
+	top: 0px ;
+}
+
+.dialog {
+	z-index: 12;
 }
