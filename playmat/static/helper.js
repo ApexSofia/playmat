@@ -71,7 +71,7 @@ var fileDialog = function(action, extensions, message, title, properties, callba
 						$('#uploadSpinner').hide();
 						dialog.dialog('close');
 						if (callback != undefined) {
-							callback();
+							callback(res.responseJSON);
 						}
 					}
 				});

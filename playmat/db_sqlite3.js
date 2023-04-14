@@ -19,8 +19,9 @@ class DB_sqlite3 {
 					"playmat  INT          NOT NULL, \n"+
 					"object   INT          NOT NULL, \n"+
 					"type     VARCHAR(20)  NOT NULL, \n"+
-					"resize   DECIMAL(5,2) NOT NULL, \n"+
+					"scale    DECIMAL(5,2) NOT NULL, \n"+
 					"opacity  DECIMAL(1,2) NOT NULL, \n"+
+					"rotate   DECIMAL(3,2) NOT NULL, \n"+
 					"x        INT          NOT NULL, \n"+
 					"y        INT          NOT NULL, \n"+
 					"UNIQUE   (playmat, object),"+
@@ -29,8 +30,9 @@ class DB_sqlite3 {
 					
 	getAllObjects = "SELECT playmat_objects.rowid, \n"+
 	                "       playmat_objects.type, \n"+
-					"       playmat_objects.resize, \n"+
+					"       playmat_objects.scale, \n"+
 					"       playmat_objects.opacity, \n"+
+					"       playmat_objects.rotate, \n"+
 					"       playmat_objects.x, \n"+
 					"       playmat_objects.y, \n"+
 					"       objects.name \n"+
@@ -57,12 +59,11 @@ class DB_sqlite3 {
 	
 	queryPlaymatList(callback) {
 		console.log('Executing queryPlaymatList...');
-		var statement   = this.playmatCreate ;
 		var getPlaymats = 'SELECT name FROM playmat_list ORDER BY creation' ;
 		var res = { success: true, playmats: [] } ;
 		this.db.serialize(() => {
 			try {
-				this.db.run(statement);
+				this.db.run(this.playmatCreate);
 				this.db.all(getPlaymats, [], (err, rows) => {
 					if (err) {
 						this.errorHandler('queryPlaymatList error')(err);
@@ -80,12 +81,11 @@ class DB_sqlite3 {
 	
 	createPlaymat(name, password, callback) {
 		console.log('Executing createPlaymat...');
-		var statement = this.playmatCreate ;
 		var insertPlaymat = "INSERT INTO playmat_list (creation, name, password) "+
 		                    "VALUES (DateTime('now'),?,?)" ; 
 		this.db.serialize(() => {
 			try {
-				this.db.run(statement);
+				this.db.run(this.playmatCreate);
 				this.db.run(insertPlaymat, [name, password], (err, row) => {
 					if (err) {
 						this.errorHandler('createPlaymat error')(err);
@@ -105,11 +105,10 @@ class DB_sqlite3 {
 	
 	checkPassword(name, password, callback) {
 		console.log('Executing checkPassword...');
-		var statement = this.playmatCreate ;
 		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name=? AND password=?" ; 
 		this.db.serialize(() => {
 			try {
-				this.db.run(statement);
+				this.db.run(this.playmatCreate);
 				this.db.get(checkPlaymat, [name, password], (err, row) => {
 					if (err) {
 						this.errorHandler('checkPassword error')(err);
@@ -127,22 +126,21 @@ class DB_sqlite3 {
 		this.close();
 	}
 	
-	upload(playmat, file, type, callback) {
+	upload(playmat, file, type, x, y, callback) {
 		// ToDo: Re-do this method, is aweful, it's not properly nested, and rage filled.
 		
 		console.log('Executing upload...');
-		var statement1 = this.objectsCreate ;
-		var statement2 = this.playObjCreate ;
 		var insertObject   = "INSERT INTO objects (creation, name, type) "+
 		                     "VALUES (DateTime('now'),? ,? )" ; 
 		var deleteRelation = "DELETE FROM playmat_objects WHERE type='background' AND playmat=?"
-		var insertRelation = "INSERT INTO playmat_objects (creation, playmat, object, type, resize, opacity, x, y) "+
-		                     "VALUES (DateTime('now'),? , (SELECT rowid FROM objects WHERE name=?), ?, '100.00', '1.0', '120', '120')";
+		var insertRelation = "INSERT INTO playmat_objects (creation, playmat, object, type, scale, opacity, rotate, x, y) "+
+		                     "VALUES (DateTime('now'),? , (SELECT rowid FROM objects WHERE name=?), ?, '1.00', '1.0', '0.0', ?, ?)";
 		var res = { success: true, objects: [] } ;
 		this.db.serialize(() => {
 			try {
-				this.db.run(statement1);
-				this.db.run(statement2);+
+				this.db.run(this.playmatCreate);
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
 				this.db.run(insertObject, [file, type], (err, row) => {
 					if (err) {
 						this.errorHandler('upload error')(err);
@@ -155,8 +153,10 @@ class DB_sqlite3 {
 				});
 				if (type == 'background') {
 					this.db.run(deleteRelation, [playmat]);
+					x = 0 ;
+					y = 0 ;
 				}
-				this.db.run(insertRelation, [playmat, file, type], (err, row) => {
+				this.db.run(insertRelation, [playmat, file, type, x, y], (err, row) => {
 					if (err) {
 						this.errorHandler('upload error')(err);
 						callback({ success: false, error : err });
@@ -176,15 +176,80 @@ class DB_sqlite3 {
 				
 			} catch (exception) { this.errorHandler('upload exception')(exception)}
 		});
+		this.close();
+	}
+	
+	updateToken(playmat, id, scale, opacity, rotate, x, y, callback){
+		console.log('Executing updateToken...');
+		var updateObject = "UPDATE playmat_objects SET scale=?, opacity=?, rotate=?, x=?, y=? WHERE rowid=?";
+		var res = { success: true, objects: [] } ;
+		this.db.serialize(() => {
+			try {
+				this.db.run(this.playmatCreate);
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
+				this.db.run(updateObject, [scale, opacity, rotate, x, y, id], (err, row) => {
+					if (err) {
+						this.errorHandler('updateToken error')(err);
+						callback({ success: false, error : err });
+					}
+				});
+				this.db.all(this.getAllObjects, [playmat], (err, rows) => {
+					if (err) {
+						this.errorHandler('updateToken error')(err);
+						callback({ success: false, error : err });
+					} else {
+						rows.forEach((row) => {
+							res.objects.push(row);
+						});
+						callback (res);
+					}
+				});
+			} catch (exception) { this.errorHandler('updateToken exception')(exception)}
+		});
+		this.close();
+	}
+	
+	deleteToken(playmat, id, callback){
+		console.log('Executing deleteToken...');
+		var deleteObject = "DELETE FROM playmat_objects WHERE rowid=?" ;
+		var res = { success: true, objects: [] } ;
+		this.db.serialize(() => {
+			try {
+				this.db.run(this.playmatCreate);
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
+				this.db.run(deleteObject, [id], (err, row) => {
+					if (err) {
+						this.errorHandler('deleteToken error')(err);
+						callback({ success: false, error : err });
+					}
+				});
+				this.db.all(this.getAllObjects, [playmat], (err, rows) => {
+					if (err) {
+						this.errorHandler('deleteToken error')(err);
+						callback({ success: false, error : err });
+					} else {
+						rows.forEach((row) => {
+							res.objects.push(row);
+						});
+						callback (res);
+					}
+				});
+			} catch (exception) { this.errorHandler('deleteToken exception')(exception)}
+		});
+		this.close();
 	}
 	
 	joinPlaymat(name, password, user, callback) {
 		console.log('Executing joinPlaymat...');
-		var statement = this.playmatCreate ;
 		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name=? AND password=?" ; 
 		var res = { success: true, objects:[], id: -1} ;
 		this.db.serialize(() => {
 			try {
+				this.db.run(this.playmatCreate);
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
 				var test = this.db.get(checkPlaymat, [name, password], (err, row) => {
 					if (err) {
 						this.errorHandler('joinPlaymat error')(err);

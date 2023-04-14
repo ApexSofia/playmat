@@ -81,3 +81,7 @@ body {
 .dialog {
 	z-index: 12;
 }
+
+.sliderPlaceholder {
+	margin-top: 5px;
+}

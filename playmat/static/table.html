@@ -5,32 +5,12 @@
 		<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 		<script src="./helper.js"></script>
+		<script src="./board.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script>
-			$(function() {
-				var processBoard = function(objects){
-					for (var i = 0 ; i < objects.length ; i++) {
-						var obj = objects[i] ;
-						if (obj.type == 'background') {
-							$('body').css('background-image','none');
-							$('body').css('background-color','#000000');
-							if (!exists('object_'+obj.rowid)) {
-								var name = obj.name ;
-								var img = '<img '
-								if (obj.name.indexOf('http://') == 0 || obj.name.indexOf('https://') == 0) {
-									img = img + 'src="'+obj.name+'" ';
-								} else {
-									img = img + 'src="./assets/'+obj.name+'" ';
-								}
-								img = img + 'id="object_'+obj.rowid+'" style="position:absolute; left:0px; top:0px">' ;
-								$('body').append(img);
-							}
-						}
-					}
-				};
-				
+			$(function() {				
 				var menuTemplate = {
 					autoOpen: false,
 					width: 410,
@@ -75,9 +55,23 @@
 						toggleMenu('mainMenu');
 					});
 					$('#newBackgroundButton').on().click(function (){
-						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a background', 'File upload', { type: 'background', playmat: id }, function(){
+						var props = { type: 'background', playmat: id } ;
+						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a background', 'File upload', props, function(res){
 							$('#mainMenu').dialog('close');
 							$('#libraryMenu').dialog('close');
+							if (res.objects) {
+								processBoard(res.objects);
+							}
+						});
+					});
+					$('#loadTokenButton').on().click(function (){
+						var props = { type: 'token', playmat: id, x: $(window).scrollLeft(), y: $(window).scrollTop() } ;
+						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a token', 'File upload', props, function(res){
+							$('#mainMenu').dialog('close');
+							$('#libraryMenu').dialog('close');
+							if (res.objects) {
+								processBoard(res.objects);
+							}
 						});
 					});
 					$('#openLibraryButton').on().click(function (){
