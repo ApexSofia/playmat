@@ -30,6 +30,12 @@ var processBoard = function(objects){
 		});
 	}
 	
+	var setScale = function(id, value){
+		var style = $('#'+id).attr('style');
+		style = style.replace(/scale\s*:\s*[0-9.]+\s*;/, 'scale: '+value+';');
+		$('#'+id).attr('style', style);
+	}
+	
 	// Updates the background and create/update the tokens as needed 
 	var safe = {} ;
 	for (var i = 0 ; i < objects.length ; i++) {
@@ -56,8 +62,31 @@ var processBoard = function(objects){
 								  'scale:'+obj.scale+'; opacity:'+obj.opacity+'; rotate:'+obj.rotate+'deg; z-index:8">' ;
 				$('body').append(img);
 				$('#'+id).draggable({
-					stop: function(event, ui) {
+					drag: function (event, ui) {
+						__dx = ui.position.left - ui.originalPosition.left;
+						__dy = ui.position.top - ui.originalPosition.top;
+						ui.position.left = ui.originalPosition.left + (__dx);
+						ui.position.top = ui.originalPosition.top + (__dy);
+						//
+						ui.position.left += __recoupLeft;
+						ui.position.top += __recoupTop;
+					},
+					start: function (event, ui) {
+						$(this).css('cursor', 'move');
+						var left = parseInt($(this).css('left'), 10);
+						left = isNaN(left) ? 0 : left;
+						var top = parseInt($(this).css('top'), 10);
+						top = isNaN(top) ? 0 : top;
+						__recoupLeft = left - ui.position.left;
+						__recoupTop = top - ui.position.top;
+					},
+					stop: function (event, ui) {
+						$(this).css('cursor', 'default');
 						updateToken(this.id);
+					},
+					create: function (event, ui) {
+						$(this).attr('oriLeft', $(this).css('left'));
+						$(this).attr('oriTop', $(this).css('top'));
 					}
 				});
 				$('#'+id).contextmenu(function (event){
@@ -74,6 +103,7 @@ var processBoard = function(objects){
 								   '<label for="tokenRotate">Rotate: '+rotate+'</label><br/>'+
 								   '<div   id= "tokenRotate" class="sliderPlaceholder"/></div>';
 						var dialog = $('<div id="imageMenu"></div>').html(html).dialog({
+							title: 'Token properties',
 							buttons: {
 								Ok: () => {
 									updateToken(this.id);
@@ -86,19 +116,20 @@ var processBoard = function(objects){
 								Cancel: () => {
 									$('#'+id).css('opacity', opacity);
 									$('#'+id).css('rotate', rotate);
-									var style = $('#'+id).attr('style');
-									style = style.replace(/scale: [0-9.]+;/, 'scale: '+scale+';');
-									$('#'+id).attr('style', style);
+									setScale(id, scale);
 									dialog.dialog('close');
 								}
+							},
+							position: {
+								my: 'left+20 top+20', 
+								at: 'right bottom', 
+								of: event
 							},
 							open: function() {
 								$('#tokenScale').slider({ min: 0.1, max: 4, step: 0.05, value: scale, 
 									slide: (event, ui) => { 
 										$('label[for=tokenScale]').text('Scale: '+ui.value);
-										var style = $('#'+id).attr('style');
-										style = style.replace(/scale: [0-9.]+;/, 'scale: '+ui.value+';');
-										$('#'+id).attr('style', style);
+										setScale(id, ui.value);
 										// $('#'+id).css('scale', ui.value); // Thisn doesn't work, WTF
 									}
 								});
@@ -125,9 +156,9 @@ var processBoard = function(objects){
 			} else {
 				$('#'+id).css('left',    obj.x + 'px');
 				$('#'+id).css('top',     obj.y + 'px');
-				$('#'+id).css('scale',   obj.scale);
 				$('#'+id).css('opacity', obj.opacity);
 				$('#'+id).css('rotate',  obj.rotate);
+				setScale(id, obj.scale);
 			}
 		}
 	}
