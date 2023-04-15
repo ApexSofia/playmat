@@ -6,23 +6,31 @@
 		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 		<script src="./helper.js"></script>
 		<script src="./board.js"></script>
-		
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script>
 			$(function() {				
-				var menuTemplate = {
-					autoOpen: false,
-					width: 410,
-					show: {
-						effect: "blind",
-						duration: 500
-					},
-					hide: {
-						effect: "blind",
-						duration: 500
-					}
+				var buildMenu = (menu, position) => {
+					$('#'+menu).dialog({
+						position: position,
+						autoOpen: false,
+						width: 'auto',
+						height: 'auto',
+						show: {
+							effect: "blind",
+							duration: 500
+						},
+						hide: {
+							effect: "blind",
+							duration: 500
+						}
+					});
+					$('div[aria-describedby='+menu+'] div.ui-dialog-titlebar').hide();
+					$('#'+menu).parent().css({position:"fixed"});
+					$('#'+menu.replace('Menu', 'Button')).on().click(function (){
+						toggleMenu(menu);
+					});
 				};
 			
 				var id = $('#playmatId').val();
@@ -32,30 +40,16 @@
 					});
 				} else {
 					processBoard(JSON.parse($('#initialData').val()));
-				
-					$('#mainMenu').dialog($.extend(true,{
-						title: 'Main menu',
-						position: { 
-							my: "left top+5", 
-							at: "left bottom", 
-							of: $('#hamburguer') 
-						},
-					}, menuTemplate));
-					$('div[aria-describedby=mainMenu] div.ui-dialog-titlebar').hide();
 					
-					$('#libraryMenu').dialog($.extend(true,{
-						position: { 
-							my: "left-5 top+9", 
-							at: "left bottom", 
-							of: $('#mainMenu') 
-						},	
-					}, menuTemplate));
-					$('div[aria-describedby=libraryMenu] div.ui-dialog-titlebar').hide();
+					$('#playmatNameShow').text($('#playmatName').val());
+					$('#playmatPassShow').text($('#playmatPass').val());
 					
-					$('#hamburguer').on().click(function() {
-						toggleMenu('mainMenu');
-					});
-					$('#newBackgroundButton').on().click(function (){
+					buildMenu('mainMenu',       { my: "left top+5",    at: "left bottom", of: $('#mainButton') });
+					buildMenu('playmatMenu',    { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
+					buildMenu('backgroundMenu', { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
+					buildMenu('tokenMenu',      { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
+					
+					$('#uploadBackgroundButton').on().click(function (){
 						var props = { type: 'background', playmat: id } ;
 						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a background', 'File upload', props, function(res){
 							$('#mainMenu').dialog('close');
@@ -65,7 +59,7 @@
 							}
 						});
 					});
-					$('#loadTokenButton').on().click(function (){
+					$('#uploadTokenButton').on().click(function (){
 						var props = { type: 'token', playmat: id, x: $(window).scrollLeft(), y: $(window).scrollTop() } ;
 						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a token', 'File upload', props, function(res){
 							$('#mainMenu').dialog('close');
@@ -75,27 +69,37 @@
 							}
 						});
 					});
-					$('#openLibraryButton').on().click(function (){
-						toggleMenu('libraryMenu');
-					});	
-					
+					$('#exitButton').on().click(function() {
+						betterConfirm('Do you really want to exit?','Confirm',() => { window.location.href = 'index.html' ; },() => { toggleMenu('mainMenu'); })
+					});
 				}
 			});
 		</script>
 	</head>
 	<body>
 		<input id="playmatId" type="hidden" value="-1"/>
-		<div class="hamburguer" id="hamburguer">&#9776;</div>
+		<div class="hamburguer" id="mainButton">&#9776;</div>
 		<div class="dialog" id="mainMenu" style="display: none">
-			<div class="menuSelection" id="newBackgroundButton"    >New background</div>
-			<div class="menuSelection" id="loadTokenButton"        >Load token</div>
-			<div class="menuSelection" id="openLibraryButton"      >Open library</div>
-			<div class="menuSelection" id="destroyPlaymatButton"   >Destroy playmat</div>
-			<div class="menuSelection" id="exitButton"             >Exit</div>
+			<div class="menuSelection" id="playmatButton"   >Playmat info</div>
+			<div class="menuSelection" id="backgroundButton">Background</div>
+			<div class="menuSelection" id="tokenButton"     >Tokens</div>
+			<div class="menuSelection" id="exitButton"      >Exit</div>
 		</div>
-		<div class="dialog" id="libraryMenu" style="display: none" parentMenu="mainMenu">
-			<div class="menuSelection" id="backgroundLibraryButton">Background library</div>
-			<div class="menuSelection" id="tokenLibraryButton"     >Token library</div>
+		<div class="dialog" id="playmatMenu" style="display: none" parentMenu="mainMenu">
+			<div class="menuPlaceholder" id="playmatNameHolder"    >Playmat name: <span     class="mark" id="playmatNameShow"></span></div>
+			<div class="menuPlaceholder" id="playmatPasswordHolder">Playmat password: <span class="mark" id="playmatPassShow"></span></div>
+			<div class="menuPlaceholder"                           >&nbsp;</div>
+			<div class="menuSelection"   id="destroyPlaymatButton" >Destroy this playmat</div>
+		</div>
+		<div class="dialog" id="backgroundMenu" style="display: none" parentMenu="mainMenu">
+			<div class="menuSelection" id="uploadBackgroundButton" >Upload a new background</div>
+			<div class="menuSelection" id="importBackgroundButton" >Import a background from the web</div>
+			<div class="menuSelection" id="existBackgroundButton"  >Use an existing background</div>
+		</div>
+		<div class="dialog" id="tokenMenu" style="display: none" parentMenu="mainMenu">
+			<div class="menuSelection" id="uploadTokenButton" >Upload a new token</div>
+			<div class="menuSelection" id="importTokenButton" >Import a token from the web</div>
+			<div class="menuSelection" id="existTokenButton"  >Use an existing token</div>
 		</div>
 	</body>
 </html>

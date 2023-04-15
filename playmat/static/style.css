@@ -56,6 +56,19 @@ body {
 
 }
 
+.menuPlaceholder {
+	font-family: retroGaming;
+	font-size: 24px;
+	padding-left: 70px;
+	min-height: 43px;
+	background: none;
+	text-shadow: 4px 2px #444444;
+}
+
+.menuSelection:hover {
+	text-shadow: 4px 2px #4444AA;
+}
+
 .menuSelection {
 	font-family: retroGaming;
 	font-size: 24px;
@@ -69,7 +82,7 @@ body {
 .menuSelection:hover {
 	background-image: url("hand.png") ;
 	background-repeat: no-repeat;
-	  text-shadow: 4px 2px #4444AA;
+	text-shadow: 4px 2px #4444AA;
 }
 
 .customBackground {
@@ -84,4 +97,8 @@ body {
 
 .sliderPlaceholder {
 	margin-top: 5px;
+}
+
+.mark {
+	color: dodgerblue;
 }

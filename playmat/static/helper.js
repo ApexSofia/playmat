@@ -8,12 +8,44 @@ var betterAlert = function(message, title, callback) {
 		title: title,
 		resizable: false,
 		modal: true,
+		beforeClose: function( event, ui ) {
+			$('#betterAlert').remove();
+		},
 		buttons: {
 			'Ok': () => {
 				dialog.dialog('close');
-				$('#betterAlert').remove();
 				if (callback != undefined) {
 					callback();
+				}
+			}
+		}
+	});
+};
+
+var betterConfirm = function(message, title, callbackOk, callbackCancel) {
+	if (!title)
+		title = 'Confirm';
+	if (!message)
+		message = 'No Message to Display.';
+	
+	var dialog = $('<div id="betterConfirm"></div>').html(message).dialog({
+		title: title,
+		resizable: false,
+		modal: true,
+		beforeClose: function( event, ui ) {
+			$('#betterConfirm').remove();
+		},
+		buttons: {
+			'Ok': () => {
+				dialog.dialog('close');
+				if (callbackOk != undefined) {
+					callbackOk();
+				}
+			},
+			'Cancel': () => {
+				dialog.dialog('close');
+				if (callbackCancel != undefined) {
+					callbackCancel();
 				}
 			}
 		}
@@ -125,8 +157,13 @@ var check = function (fields) {
 var toggleMenu = function(dialogName) {
 	var isOpen = $('#'+dialogName).dialog("isOpen");
 	if (!isOpen) {
+		var parentMenu = $('#'+dialogName).attr('parentMenu');
+		if (parentMenu) {
+			$('div[parentMenu='+parentMenu+']').dialog('close');
+		}
 		$('#'+dialogName).dialog('open');
 		$('div[aria-describedby='+dialogName+'] div.ui-dialog-titlebar').hide();
+		console.log();
 	} else {
 		$('#'+dialogName).dialog('close');
 		$('div[parentMenu='+dialogName+']').dialog('close');

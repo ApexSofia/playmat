@@ -54,9 +54,12 @@ exports.deleteToken = function(req,res) {
 };
 
 exports.table = function(req,res) {
+	var sanitize = (text) => {
+		return text.replace(/"/g, '&quot;');
+	};
 	var input = (name, value) => {
 		return '<input id="'+name+'" type="hidden" value="'+value+'"/>';
-	}
+	};
 	let fs = require('fs');
 	var db = new DB();
 	db.joinPlaymat(req.body.playmatName, req.body.playmatPass, req.body.playerName, (obj) => {
@@ -64,7 +67,9 @@ exports.table = function(req,res) {
 			if (err) {
 				res.send(err);
 			} else {
-				var initialData = '\n\t\t'+ input('initialData',JSON.stringify(obj.objects).replace(/"/g, '&quot;'));
+				var initialData = '\n\t\t'+ input('playmatName',sanitize(req.body.playmatName))+
+				                  '\n\t\t'+ input('playmatPass',sanitize(req.body.playmatPass))+
+				                  '\n\t\t'+ input('initialData',sanitize(JSON.stringify(obj.objects)));
 				data = data.replace(input('playmatId','-1'),input('playmatId',obj.id)+initialData);
 				res.end(data);
 			}
