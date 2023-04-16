@@ -14,6 +14,7 @@ var processBoard = function(objects){
 			scale   : $('#'+id).css('scale'),
 			opacity : $('#'+id).css('opacity'), 
 			rotate  : $('#'+id).css('rotate').replace('deg','').replace('none','0'),
+			mirror  : getMirror(id),
 			x       : $('#'+id).css('left').replace('px',''), 
 			y       : $('#'+id).css('top').replace('px','')
 		}, (res) => {
@@ -34,6 +35,15 @@ var processBoard = function(objects){
 		var style = $('#'+id).attr('style');
 		style = style.replace(/scale\s*:\s*[0-9.]+\s*;/, 'scale: '+value+';');
 		$('#'+id).attr('style', style);
+	}
+	
+	var getMirror = function(id){
+		var mirror = ($('#'+id).css('transform').replace(/\s/g,'') == ('matrix(-1,0,0,1,0,0)')) ;
+		return (mirror ? '1' : '0');
+	}
+	
+	var setMirror = function(id, mirror){
+		$('#'+id).css('transform',  'scale('+(mirror == '1' ? '-':'')+'1,1)');
 	}
 	
 	// Updates the background and create/update the tokens as needed 
@@ -59,7 +69,8 @@ var processBoard = function(objects){
 			if (!exists('#'+id)) {
 				var img = '<img class="token" rowid="'+obj.rowid+'" src="'+getPath(obj.name)+'" id="'+id+'" '+
 						   'style="position:absolute; left:'+obj.x+'px; top:'+obj.y+'px; '+
-								  'scale:'+obj.scale+'; opacity:'+obj.opacity+'; rotate:'+obj.rotate+'deg; z-index:8">' ;
+								  'scale:'+obj.scale+'; opacity:'+obj.opacity+'; rotate:'+obj.rotate+'deg; '+
+								  'transform: scale('+(obj.mirror == '1' ? '-' : '')+'1,1); z-index:8">' ;
 				$('body').append(img);
 				$('#'+id).draggable({
 					drag: function (event, ui) {
@@ -95,13 +106,15 @@ var processBoard = function(objects){
 						var scale   = $('#'+id).css('scale') ;
 						var opacity = $('#'+id).css('opacity') ;
 						var rotate  = $('#'+id).css('rotate') ;
+						var mirror  = getMirror(id) ;
 						var html = '<form>' +
 								   '<label for="tokenScale">Scale: '+scale+'</label><br/>'+
 								   '<div   id= "tokenScale" class="sliderPlaceholder"></div><br/>'+
 								   '<label for="tokenOpacity">Opacity: '+opacity+'</label><br/>'+
 								   '<div   id= "tokenOpacity" class="sliderPlaceholder"/></div><br/>'+
 								   '<label for="tokenRotate">Rotate: '+rotate+'</label><br/>'+
-								   '<div   id= "tokenRotate" class="sliderPlaceholder"/></div>';
+								   '<div   id= "tokenRotate" class="sliderPlaceholder"/></div><br/>'+
+								   '<input id= "tokenMirror" type="checkbox"'+(mirror == '1' ? ' checked':'')+'/><label for="tokenMirror"> Mirror </label> ';
 						var dialog = $('<div id="imageMenu"></div>').html(html).dialog({
 							title: 'Token properties',
 							buttons: {
@@ -117,6 +130,7 @@ var processBoard = function(objects){
 									$('#'+id).css('opacity', opacity);
 									$('#'+id).css('rotate', rotate);
 									setScale(id, scale);
+									setMirror(id, mirror);
 									dialog.dialog('close');
 								}
 							},
@@ -145,6 +159,9 @@ var processBoard = function(objects){
 										$('#'+id).css('rotate', ui.value+'deg');
 									}
 								});
+								$('#tokenMirror').change(function(){
+									$('#'+id).css('transform',  'scale('+(this.checked ? '-':'')+'1,1)');
+								});
 							},
 							beforeClose: function( event, ui ) {
 								$('#imageMenu').remove();
@@ -159,6 +176,7 @@ var processBoard = function(objects){
 				$('#'+id).css('opacity', obj.opacity);
 				$('#'+id).css('rotate',  obj.rotate);
 				setScale(id, obj.scale);
+				setMirror(obj.mirror);
 			}
 		}
 	}

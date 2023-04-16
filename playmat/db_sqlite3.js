@@ -10,8 +10,10 @@ class DB_sqlite3 {
 					
 	objectsCreate = "CREATE TABLE IF NOT EXISTS objects (\n"+
 					"creation DATE         NOT NULL, \n"+
+					"alias    VARCHAR(100) NOT NULL, \n"+
 					"name     VARCHAR(100) NOT NULL, \n"+
 					"type     VARCHAR(20)  NOT NULL, \n"+
+					"UNIQUE   (alias),\n"+
 					"UNIQUE   (name))";
 					
 	playObjCreate = "CREATE TABLE IF NOT EXISTS playmat_objects (\n"+
@@ -22,10 +24,11 @@ class DB_sqlite3 {
 					"scale    DECIMAL(5,2) NOT NULL, \n"+
 					"opacity  DECIMAL(1,2) NOT NULL, \n"+
 					"rotate   DECIMAL(3,2) NOT NULL, \n"+
+					"mirror   INT          NOT NULL, \n"+
 					"x        INT          NOT NULL, \n"+
 					"y        INT          NOT NULL, \n"+
-					"UNIQUE   (playmat, object),"+
-					"FOREIGN KEY(playmat) REFERENCES playmat_list(rowid),"+
+					"UNIQUE   (playmat, object),\n"+
+					"FOREIGN KEY(playmat) REFERENCES playmat_list(rowid),\n"+
 					"FOREIGN KEY(object)  REFERENCES objects(rowid))";
 					
 	getAllObjects = "SELECT playmat_objects.rowid, \n"+
@@ -33,6 +36,7 @@ class DB_sqlite3 {
 					"       playmat_objects.scale, \n"+
 					"       playmat_objects.opacity, \n"+
 					"       playmat_objects.rotate, \n"+
+					"       playmat_objects.mirror, \n"+
 					"       playmat_objects.x, \n"+
 					"       playmat_objects.y, \n"+
 					"       objects.name \n"+
@@ -126,24 +130,24 @@ class DB_sqlite3 {
 		this.close();
 	}
 	
-	upload(playmat, file, type, x, y, callback) {
+	register(playmat, alias, file, type, x, y, callback) {
 		// ToDo: Re-do this method, is aweful, it's not properly nested, and rage filled.
 		
-		console.log('Executing upload...');
-		var insertObject   = "INSERT INTO objects (creation, name, type) "+
-		                     "VALUES (DateTime('now'),? ,? )" ; 
+		console.log('Executing register...');
+		var insertObject   = "INSERT INTO objects (creation, alias, name, type) "+
+		                     "VALUES (DateTime('now'),? ,? ,? )" ; 
 		var deleteRelation = "DELETE FROM playmat_objects WHERE type='background' AND playmat=?"
-		var insertRelation = "INSERT INTO playmat_objects (creation, playmat, object, type, scale, opacity, rotate, x, y) "+
-		                     "VALUES (DateTime('now'),? , (SELECT rowid FROM objects WHERE name=?), ?, '1.00', '1.0', '0.0', ?, ?)";
+		var insertRelation = "INSERT INTO playmat_objects (creation, playmat, object, type, scale, opacity, rotate,mirror , x, y) "+
+		                     "VALUES (DateTime('now'),? , (SELECT rowid FROM objects WHERE name=?), ?, '1.00', '1.0', '0.0', false, ?, ?)";
 		var res = { success: true, objects: [] } ;
 		this.db.serialize(() => {
 			try {
 				this.db.run(this.playmatCreate);
 				this.db.run(this.objectsCreate);
 				this.db.run(this.playObjCreate);
-				this.db.run(insertObject, [file, type], (err, row) => {
+				this.db.run(insertObject, [alias, file, type], (err, row) => {
 					if (err) {
-						this.errorHandler('upload error')(err);
+						this.errorHandler('register error')(err);
 						if (err == 'Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: objects.name') {
 							callback({ success: false, error : 'An object with this name already exists.'}) ;
 						} else {
@@ -158,13 +162,13 @@ class DB_sqlite3 {
 				}
 				this.db.run(insertRelation, [playmat, file, type, x, y], (err, row) => {
 					if (err) {
-						this.errorHandler('upload error')(err);
+						this.errorHandler('register error')(err);
 						callback({ success: false, error : err });
 					}
 				});
 				this.db.all(this.getAllObjects, [playmat], (err, rows) => {
 					if (err) {
-						this.errorHandler('upload error')(err);
+						this.errorHandler('register error')(err);
 						callback({ success: false, error : err });
 					} else {
 						rows.forEach((row) => {
@@ -174,21 +178,21 @@ class DB_sqlite3 {
 					}
 				});
 				
-			} catch (exception) { this.errorHandler('upload exception')(exception)}
+			} catch (exception) { this.errorHandler('register exception')(exception)}
 		});
 		this.close();
 	}
 	
-	updateToken(playmat, id, scale, opacity, rotate, x, y, callback){
+	updateToken(playmat, id, scale, opacity, rotate, mirror, x, y, callback){
 		console.log('Executing updateToken...');
-		var updateObject = "UPDATE playmat_objects SET scale=?, opacity=?, rotate=?, x=?, y=? WHERE rowid=?";
+		var updateObject = "UPDATE playmat_objects SET scale=?, opacity=?, rotate=?, mirror=?, x=?, y=? WHERE rowid=?";
 		var res = { success: true, objects: [] } ;
 		this.db.serialize(() => {
 			try {
 				this.db.run(this.playmatCreate);
 				this.db.run(this.objectsCreate);
 				this.db.run(this.playObjCreate);
-				this.db.run(updateObject, [scale, opacity, rotate, x, y, id], (err, row) => {
+				this.db.run(updateObject, [scale, opacity, rotate, mirror, x, y, id], (err, row) => {
 					if (err) {
 						this.errorHandler('updateToken error')(err);
 						callback({ success: false, error : err });

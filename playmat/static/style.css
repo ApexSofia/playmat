@@ -102,3 +102,10 @@ body {
 .mark {
 	color: dodgerblue;
 }
+
+.imagePreview {
+	max-width: 150px;
+	max-height: 150px;
+	border: 3px;
+	border-style: dashed
+}

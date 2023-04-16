@@ -8,6 +8,7 @@ var betterAlert = function(message, title, callback) {
 		title: title,
 		resizable: false,
 		modal: true,
+		width: 'auto',
 		beforeClose: function( event, ui ) {
 			$('#betterAlert').remove();
 		},
@@ -32,6 +33,7 @@ var betterConfirm = function(message, title, callbackOk, callbackCancel) {
 		title: title,
 		resizable: false,
 		modal: true,
+		width: 'auto',
 		beforeClose: function( event, ui ) {
 			$('#betterConfirm').remove();
 		},
@@ -52,15 +54,15 @@ var betterConfirm = function(message, title, callbackOk, callbackCancel) {
 	});
 };
 
-var fileDialog = function(action, extensions, message, title, properties, callback) {
+var fileDialog = function(file, action, extensions, message, title, properties, callback) {
 	if (!title)
-		title = 'File upload';
+		title = file ? 'File upload' : 'Web import';
 	if (!message)
-		message = 'Please select a file.';
+		message = file ? 'Please select a file.' : 'Please select a file.';
 	if (!properties)
 		properties = {};
 	
-	var html = '<form id="uploadFileForm" enctype="multipart/form-data"' ;
+	var html = '<form id="uploadFileForm"'+ (file ? ' enctype="multipart/form-data"':'') ;
 	if (action != undefined ) {
 		html = html + ' action="'+action+'"';
 	}
@@ -69,10 +71,16 @@ var fileDialog = function(action, extensions, message, title, properties, callba
 	}
 	html = html + '>' ;
 	html = html + '<span>' + message + '</span><br/><br/>' +
-	              '<img id="uploadSpinner" src="loader.gif" class="spinner" style="display: none"/><br/>'+
-	              '<label for="uploadFile">File</label><br>\n' +
-	              '<input id="uploadFile" name="file" type="file" accept="'+extensions.join(',')+'"/><br><br>'+
-				  '<label for="uploadName">Name</label><br>' +
+	              '<img id="uploadSpinner" src="loader.gif" class="spinner" style="display: none"/><br/>';
+	if (file) {
+		html = html + '<label for="uploadFile">File</label><br>\n' +
+					  '<input id= "uploadFile" name="file" type="file" accept="'+extensions.join(',')+'"/><br><br>';
+	} else {
+		html = html + '<img   id="previewFile"/ class="imagePreview"><br/>\n' +
+		              '<label for="uploadFile">File</label><br>\n' +
+					  '<input id= "uploadFile" name="url" type="url"/><br><br>';
+	}
+	html = html + '<label for="uploadName">Name</label><br>' +
 	              '<input id="uploadName" name="fileName" type="text" style="width: 97%;"/>' ;
 	for (var key in properties) {
 		html = html + '<input name="'+key+'" type="hidden" value="'+properties[key]+'"/>' ;
@@ -90,23 +98,33 @@ var fileDialog = function(action, extensions, message, title, properties, callba
 			}
 			if (ext) {
 				$('#uploadSpinner').show();
-				var formData = new FormData($('#uploadFileForm')[0]);
-				$.ajax({
-					url: action,
-					type: "post",
-					dataType: 'json',
-					data: formData,
-					cache: false,
-					contentType: false,
-					processData: false,
-					complete: function(res){
+				if (file) {
+					var formData = new FormData($('#uploadFileForm')[0]);
+					$.ajax({
+						url: action,
+						type: "post",
+						dataType: 'json',
+						data: formData,
+						cache: false,
+						contentType: false,
+						processData: false,
+						complete: function(res){
+							$('#uploadSpinner').hide();
+							dialog.dialog('close');
+							if (callback != undefined) {
+								callback(res.responseJSON);
+							}
+						}
+					});
+				} else {
+					$.post(action, $('#uploadFileForm').serialize(), function (res) {
 						$('#uploadSpinner').hide();
 						dialog.dialog('close');
 						if (callback != undefined) {
-							callback(res.responseJSON);
-						}
-					}
-				});
+							callback(JSON.parse(res));
+						}					
+					});
+				}
 			} else {
 				betterAlert('Supported extensions: '+extensions.join(' '));
 			}
@@ -115,6 +133,13 @@ var fileDialog = function(action, extensions, message, title, properties, callba
 		}
 	}
 	
+	var buttons = {} ;
+	if (file) {
+		buttons.Upload = () => { upload(); } ;
+	} else {
+		buttons.Import = () => { upload(); } ;
+	}
+	buttons.Cancel = () => { dialog.dialog('close'); }
 	var dialog = $('<div></div>').html(html).dialog({
 		title: title,
 		resizable: false,
@@ -123,19 +148,17 @@ var fileDialog = function(action, extensions, message, title, properties, callba
 		beforeClose: function( event, ui ) {
 			$('#uploadFileForm').remove();
 		},
-		buttons: {
-			'Upload': () => {				
-				upload();
-			},
-			'Cancel': () => {
-				dialog.dialog('close');
-			}
-		}
+		buttons: buttons
 	});
 	
 	$("#uploadFileForm").on("submit", function(event){
 		event.preventDefault();
 		upload();
+	});
+	
+	$('#uploadFile').on().change(function (event) {
+		$('#previewFile').attr('src', '');
+		$('#previewFile').attr('src', $('#uploadFile').val());
 	});
 };
 

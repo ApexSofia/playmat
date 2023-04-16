@@ -35,7 +35,7 @@ exports.upload = function(req,res) {
 		var newpath = 'assets/' + fields.fileName + extension ;
 		
 		var db = new DB();
-		db.upload(fields.playmat, fields.fileName + extension, fields.type, fields.x, fields.y, (obj => { 
+		db.register(fields.playmat, fields.fileName, fields.fileName + extension, fields.type, fields.x, fields.y, (obj => { 
 			fs.rename(filepath, newpath, function () {
 				res.end(JSON.stringify(obj)); 
 			});
@@ -43,9 +43,16 @@ exports.upload = function(req,res) {
 	});
 };
 
+exports.importFromWeb = function(req,res) {
+	var db = new DB();
+	db.register(req.body.playmat, req.body.fileName, req.body.url, req.body.type, req.body.x, req.body.y, (obj) => { 
+		res.end(JSON.stringify(obj)); 
+	});
+}
+
 exports.updateToken = function(req,res) {
 	var db = new DB();
-	db.updateToken(req.body.playmat, req.body.id, req.body.scale, req.body.opacity, req.body.rotate, req.body.x, req.body.y, (obj) => { res.end(JSON.stringify(obj)) });
+	db.updateToken(req.body.playmat, req.body.id, req.body.scale, req.body.opacity, req.body.rotate, req.body.mirror, req.body.x, req.body.y, (obj) => { res.end(JSON.stringify(obj)) });
 };
 
 exports.deleteToken = function(req,res) {

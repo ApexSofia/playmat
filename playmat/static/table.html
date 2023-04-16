@@ -49,25 +49,33 @@
 					buildMenu('backgroundMenu', { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
 					buildMenu('tokenMenu',      { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
 					
+					var process = (res) => {
+						$('#mainMenu').dialog('close');
+						$('#backgroundMenu').dialog('close');
+						$('#tokenMenu').dialog('close');
+						if (res.success == false) {
+							betterAlert(res.error.code || res.error, 'An error has ocurred.')
+						}
+						if (res.objects) {
+							processBoard(res.objects);
+						}
+					};
+					
 					$('#uploadBackgroundButton').on().click(function (){
 						var props = { type: 'background', playmat: id } ;
-						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a background', 'File upload', props, function(res){
-							$('#mainMenu').dialog('close');
-							$('#libraryMenu').dialog('close');
-							if (res.objects) {
-								processBoard(res.objects);
-							}
-						});
+						fileDialog(true, '/upload',['.jpg','.png','.gif'],'Upload a background', 'File upload', props, process);
+					});
+					$('#importBackgroundButton').on().click(function (){
+						var props = { type: 'background', playmat: id } ;
+						fileDialog(false, '/import',['.jpg','.png','.gif'],'Import a background', 'File import', props, process);
 					});
 					$('#uploadTokenButton').on().click(function (){
 						var props = { type: 'token', playmat: id, x: $(window).scrollLeft(), y: $(window).scrollTop() } ;
-						fileDialog('/upload',['.jpg','.png','.gif'],'Upload a token', 'File upload', props, function(res){
-							$('#mainMenu').dialog('close');
-							$('#libraryMenu').dialog('close');
-							if (res.objects) {
-								processBoard(res.objects);
-							}
-						});
+						fileDialog(true, '/upload',['.jpg','.png','.gif'],'Upload a token', 'File upload', props, process);
+					});
+					$('#importTokenButton').on().click(function (){
+						var props = { type: 'token', playmat: id, x: $(window).scrollLeft(), y: $(window).scrollTop() } ;
+						fileDialog(false, '/import',['.jpg','.png','.gif'],'Import a token', 'File import', props, process);
 					});
 					$('#exitButton').on().click(function() {
 						betterConfirm('Do you really want to exit?','Confirm',() => { window.location.href = 'index.html' ; },() => { toggleMenu('mainMenu'); })
