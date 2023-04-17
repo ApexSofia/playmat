@@ -73,6 +73,9 @@ var processBoard = function(objects){
 								  'transform: scale('+(obj.mirror == '1' ? '-' : '')+'1,1); z-index:8">' ;
 				$('body').append(img);
 				$('#'+id).draggable({
+					// From here on, this is a fix for jquery draggable objects when scales
+					// for more information check 
+					// https://stackoverflow.com/questions/17098464/jquery-ui-draggable-css-transform-causes-jumping
 					drag: function (event, ui) {
 						__dx = ui.position.left - ui.originalPosition.left;
 						__dy = ui.position.top - ui.originalPosition.top;
@@ -91,14 +94,16 @@ var processBoard = function(objects){
 						__recoupLeft = left - ui.position.left;
 						__recoupTop = top - ui.position.top;
 					},
-					stop: function (event, ui) {
-						$(this).css('cursor', 'default');
-						updateToken(this.id);
-					},
 					create: function (event, ui) {
 						$(this).attr('oriLeft', $(this).css('left'));
 						$(this).attr('oriTop', $(this).css('top'));
+					},
+					stop: function (event, ui) {
+						$(this).css('cursor', 'default');
+						// Fix ends here
+						updateToken(this.id);
 					}
+
 				});
 				$('#'+id).contextmenu(function (event){
 					var id = event.currentTarget.id;

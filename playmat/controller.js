@@ -10,16 +10,16 @@ exports.createPlaymat = function(req,res) {
 	db.createPlaymat(req.body.playmat, req.body.password, (obj) => { res.end(JSON.stringify(obj)) });
 };
 
+exports.removePlaymat = function(req,res) {
+	res.send('');
+};
+
 exports.checkPassword = function(req,res) {
 	var db = new DB();
 	db.checkPassword(req.body.playmat, req.body.password, (obj) => { res.end(JSON.stringify(obj)) });
 };
 
 exports.getUpdates = function(req,res) {
-	res.send('');
-};
-
-exports.removePlaymat = function(req,res) {
 	res.send('');
 };
 
@@ -50,6 +50,13 @@ exports.importFromWeb = function(req,res) {
 	});
 }
 
+exports.reUseToken =  function(req,res) {
+	var db = new DB();
+	db.reUseToken(req.body.playmat, req.body.alias, req.body.x, req.body.y, (obj) => { 
+		res.end(JSON.stringify(obj)); 
+	});
+}
+
 exports.updateToken = function(req,res) {
 	var db = new DB();
 	db.updateToken(req.body.playmat, req.body.id, req.body.scale, req.body.opacity, req.body.rotate, req.body.mirror, req.body.x, req.body.y, (obj) => { res.end(JSON.stringify(obj)) });
@@ -59,6 +66,11 @@ exports.deleteToken = function(req,res) {
 	var db = new DB();
 	db.deleteToken(req.body.playmat, req.body.id, (obj) => { res.end(JSON.stringify(obj)) });
 };
+
+exports.getObjects = function(req, res) {
+	var db = new DB();
+	db.getObjects(req.body.type, (obj) => { res.end(JSON.stringify(obj)) });
+}
 
 exports.table = function(req,res) {
 	var sanitize = (text) => {

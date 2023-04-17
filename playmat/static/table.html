@@ -69,6 +69,40 @@
 						var props = { type: 'background', playmat: id } ;
 						fileDialog(false, '/import',['.jpg','.png','.gif'],'Import a background', 'File import', props, process);
 					});
+					$('#existBackgroundButton').on().click(function (){
+						var html = '<ul id="backgroundLibrayList"></ul>' ;
+						var dialog = $('<div></div>').html(html).dialog({
+							width: 'auto',
+							modal: true,
+							resizable: false,
+							title: 'Available backgrounds',
+							beforeClose: () => {
+								$('#backgroundLibrayList').parent().remove();
+							}
+						});
+						$.post('/getObjects',{ type:'background' },(res) => {
+							res = JSON.parse(res);
+							if (res.success == false) {
+								betterAlert(res.error.code || res.error, 'An error has ocurred.');
+							} else {
+								for (var i = 0 ; i < res.savedObjects.length ; i++) {
+									var obj = res.savedObjects[i];
+									var url = obj.name ;
+									if (!(url.indexOf('http://') == 0 || url.indexOf('https://')) == 0) {
+										url = './assets/' + url ;
+									}
+									var code = '<li class="library" id="library_'+obj.rowid+'" alias="'+obj.alias+'" >'+obj.alias+'</div>';
+									$('#backgroundLibrayList').append(code);
+									$('#library_'+obj.rowid).on().click(function (event) {
+										$.post('/reUseToken', { playmat: id, alias: $(this).attr('alias'), x: $(window).scrollLeft(), y: $(window).scrollTop() }, (res)=>{
+											dialog.dialog('close');
+											process(JSON.parse(res));
+										});
+									});
+								}
+							}
+						});
+					});
 					$('#uploadTokenButton').on().click(function (){
 						var props = { type: 'token', playmat: id, x: $(window).scrollLeft(), y: $(window).scrollTop() } ;
 						fileDialog(true, '/upload',['.jpg','.png','.gif'],'Upload a token', 'File upload', props, process);
@@ -77,8 +111,45 @@
 						var props = { type: 'token', playmat: id, x: $(window).scrollLeft(), y: $(window).scrollTop() } ;
 						fileDialog(false, '/import',['.jpg','.png','.gif'],'Import a token', 'File import', props, process);
 					});
+					$('#existTokenButton').on().click(function (){
+						var html = '<div class="thumbContainer"></div>' ;
+						var dialog = $('<div></div>').html(html).dialog({
+							width: 'auto',
+							modal: true,
+							resizable: false,
+							title: 'Available tokens',
+							beforeClose: () => {
+								$('.thumbContainer').parent().remove();
+							}
+						});
+						$('.thumbContainer').parent().parent().css({position:"fixed", left:"30px", right:"30px", top:"30px", bottom:"30px", 'overflow-y': "auto"});
+						$.post('/getObjects',{ type:'token' },(res) => {
+							res = JSON.parse(res);
+							if (res.success == false) {
+								betterAlert(res.error.code || res.error, 'An error has ocurred.');
+							} else {
+								for (var i = 0 ; i < res.savedObjects.length ; i++) {
+									var obj = res.savedObjects[i];
+									var url = obj.name ;
+									if (!(url.indexOf('http://') == 0 || url.indexOf('https://')) == 0) {
+										url = './assets/' + url ;
+									}
+									var code = '<div class="previewHolder" id="preview_'+obj.rowid+'" alias="'+obj.alias+'"><img src="'+url+'" class="imagePreview"><br/>'+obj.alias+'</div>';
+									$('.thumbContainer').append(code);
+									$('#preview_'+obj.rowid).on().click(function (event) {
+										$.post('/reUseToken', { playmat: id, alias: $(this).attr('alias'), x: $(window).scrollLeft(), y: $(window).scrollTop() }, (res)=>{
+											dialog.dialog('close');
+											process(JSON.parse(res));
+										});
+									});
+								}
+							}
+						});
+					});
 					$('#exitButton').on().click(function() {
-						betterConfirm('Do you really want to exit?','Confirm',() => { window.location.href = 'index.html' ; },() => { toggleMenu('mainMenu'); })
+						betterConfirm('Do you really want to exit?','Confirm',
+							() => { window.location.href = 'index.html' ; },
+							() => { toggleMenu('mainMenu'); })
 					});
 				}
 			});
@@ -103,11 +174,13 @@
 			<div class="menuSelection" id="uploadBackgroundButton" >Upload a new background</div>
 			<div class="menuSelection" id="importBackgroundButton" >Import a background from the web</div>
 			<div class="menuSelection" id="existBackgroundButton"  >Use an existing background</div>
+			<div class="menuPlaceholder"                           >&nbsp;</div>
 		</div>
 		<div class="dialog" id="tokenMenu" style="display: none" parentMenu="mainMenu">
 			<div class="menuSelection" id="uploadTokenButton" >Upload a new token</div>
 			<div class="menuSelection" id="importTokenButton" >Import a token from the web</div>
 			<div class="menuSelection" id="existTokenButton"  >Use an existing token</div>
+			<div class="menuPlaceholder"                           >&nbsp;</div>
 		</div>
 	</body>
 </html>

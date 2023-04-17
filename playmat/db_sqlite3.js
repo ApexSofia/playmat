@@ -27,7 +27,6 @@ class DB_sqlite3 {
 					"mirror   INT          NOT NULL, \n"+
 					"x        INT          NOT NULL, \n"+
 					"y        INT          NOT NULL, \n"+
-					"UNIQUE   (playmat, object),\n"+
 					"FOREIGN KEY(playmat) REFERENCES playmat_list(rowid),\n"+
 					"FOREIGN KEY(object)  REFERENCES objects(rowid))";
 					
@@ -183,6 +182,48 @@ class DB_sqlite3 {
 		this.close();
 	}
 	
+	reUseToken(playmat, alias, x, y, callback) {
+		console.log('Executing reUseToken...');
+		var queryObject    = "SELECT rowid, type FROM objects WHERE alias=?";
+		var deleteRelation = "DELETE FROM playmat_objects WHERE type='background' AND playmat=?"
+		var insertRelation = "INSERT INTO playmat_objects (creation, playmat, object, type, scale, opacity, rotate,mirror , x, y) "+
+		                     "VALUES (DateTime('now'),? , ?, ?, '1.00', '1.0', '0.0', false, ?, ?)";
+		var res = { success: true, objects: [] } ;
+		this.db.serialize(() => {
+			try {
+				this.db.run(this.playmatCreate);
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
+				this.db.get(queryObject, [alias], (err, row) => {
+					if (err) {
+						this.errorHandler('reUseToken error')(err);
+						callback({ success: false, error : err });
+						this.close();
+					} else {
+						this.db.serialize(() => {
+							if (row.type == 'background') {
+								this.db.run(deleteRelation, [playmat]);
+							}
+							this.db.run(insertRelation, [playmat, row.rowid, row.type, x, y]);
+							this.db.all(this.getAllObjects, [playmat], (err, rows) => {
+								if (err) {
+									this.errorHandler('reUseToken error')(err);
+									callback({ success: false, error : err });
+								} else {
+									rows.forEach((row) => {
+										res.objects.push(row);
+									});
+									callback (res);
+								}
+							});
+						});
+						this.close();
+					}
+				});
+			} catch (exception) { this.errorHandler('reUseToken exception')(exception)}
+		});
+	}
+	
 	updateToken(playmat, id, scale, opacity, rotate, mirror, x, y, callback){
 		console.log('Executing updateToken...');
 		var updateObject = "UPDATE playmat_objects SET scale=?, opacity=?, rotate=?, mirror=?, x=?, y=? WHERE rowid=?";
@@ -241,6 +282,31 @@ class DB_sqlite3 {
 					}
 				});
 			} catch (exception) { this.errorHandler('deleteToken exception')(exception)}
+		});
+		this.close();
+	}
+	
+	getObjects(type, callback){
+		console.log('Executing getObjects...');
+		var queryObjects = "SELECT rowid,* FROM objects WHERE type=? ORDER BY alias" ;
+		var res = { success: true, savedObjects: [] } ;
+		this.db.serialize(() => {
+			try {
+				this.db.run(this.playmatCreate);
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
+				this.db.all(queryObjects, [type], (err, rows) => {
+					if (err) {
+						this.errorHandler('getObjects error')(err);
+						callback({ success: false, error : err });
+					} else {
+						rows.forEach((row) => {
+							res.savedObjects.push(row);
+						});
+						callback (res);
+					}
+				});
+			} catch (exception) { this.errorHandler('getObjects exception')(exception)}
 		});
 		this.close();
 	}
