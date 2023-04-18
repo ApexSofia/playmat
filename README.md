@@ -7,7 +7,6 @@ Short term ToDo:
  + Change playmat name and password
 
 Medium term ToDo:
- + Re-do the register method
  + Notify
  + Dice rolling
  + + Initiative scorekeeping
@@ -15,3 +14,6 @@ Medium term ToDo:
  + Re-order z-index
  + Only logged users can create playmats and upload, normal users can import from web
  + Thumbnail generation for maps
+ 
+ Long term ToDo:
+  + Mobile UI 

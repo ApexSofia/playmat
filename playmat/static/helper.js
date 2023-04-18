@@ -74,14 +74,14 @@ var fileDialog = function(file, action, extensions, message, title, properties, 
 	              '<img id="uploadSpinner" src="loader.gif" class="spinner" style="display: none"/><br/>';
 	if (file) {
 		html = html + '<label for="uploadFile">File</label><br>\n' +
-					  '<input id= "uploadFile" name="file" type="file" accept="'+extensions.join(',')+'"/><br><br>';
+					  '<input id= "uploadFile" name="file" type="file" accept="'+extensions.join(',')+'" style="width:400px"/><br><br>';
 	} else {
 		html = html + '<img   id="previewFile"/ class="imagePreview"><br/>\n' +
 		              '<label for="uploadFile">File</label><br>\n' +
-					  '<input id= "uploadFile" name="url" type="url"/><br><br>';
+					  '<input id= "uploadFile" name="url" type="url" style="width:400px"/><br><br>';
 	}
 	html = html + '<label for="uploadName">Name</label><br>' +
-	              '<input id="uploadName" name="fileName" type="text" style="width: 97%;"/>' ;
+	              '<input id="uploadName" name="fileName" type="text" style="width:400px"/>' ;
 	for (var key in properties) {
 		html = html + '<input name="'+key+'" type="hidden" value="'+properties[key]+'"/>' ;
 	}

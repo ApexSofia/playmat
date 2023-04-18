@@ -44,95 +44,116 @@ class DB_sqlite3 {
 					
 	
 	constructor() {
-		this.db = new sqlite3.Database('./db/playmat.db', this.errorHandler('Connected to the playmat database.'));
+		console.log('Connecting to the playmat database.');
+		this.db = new sqlite3.Database('./db/playmat.db', this.errorHandler('Connection error'));
 	}
 	
-	errorHandler(message) {
+	errorHandler(message, callback) {
 		return function (err) {
 			if (err) {
-				console.error(err.message);
+				console.log(message);
+				console.error(err.code||err.message||err);
+				if (callback != undefined) {
+					callback({ success: false, error:(err.code||err.message||err) });
+				}
 			}
-			console.log(message);
+		}
+	}
+	
+	set(method, callback){
+		console.log('Executing ' + method + '...');
+		this.message  = method;
+		this.callback = callback;
+	}
+	
+	run(type, query, params, success, failure) {
+		var handler = (err, row) => {
+			if (err) {
+				this.errorHandler('Error executing '+ this.message, this.callback)(err);
+				if (failure != undefined) {
+					try {
+						failure(row);
+					} catch (exception) { 
+						this.errorHandler('Exception executing ' + this.method, this.callback)(exception);
+					}
+				}
+			} else {
+				if (success != undefined) {
+					try {
+						success(row);
+					} catch (exception) { 
+						this.errorHandler('Exception executing ' + this.method, this.callback)(exception);
+					}
+				}
+			}
+		} ;
+		try {
+			if (type == 'run') {
+				this.db.run(query, params, handler);
+			}
+			if (type == 'get') {
+				this.db.get(query, params, handler);
+			}
+			if (type == 'all') {
+				this.db.all(query, params, handler);
+			}
+		} catch (exception) { 
+			this.errorHandler('Exception executing ' + this.method, callback)(exception)
 		}
 	}
 	
 	close(){
-		this.db.close(this.errorHandler('Close the database connection.'));
+		console.log('Closing the database connection.\n');
+		this.db.close(this.errorHandler('Error closing the database connection.'));
 	}
 	
 	queryPlaymatList(callback) {
-		console.log('Executing queryPlaymatList...');
+		this.set('queryPlaymatList', callback);
 		var getPlaymats = 'SELECT name FROM playmat_list ORDER BY creation' ;
 		var res = { success: true, playmats: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.all(getPlaymats, [], (err, rows) => {
-					if (err) {
-						this.errorHandler('queryPlaymatList error')(err);
-						callback ({ success:false, error:err });
-					}
-					rows.forEach((row) => {
-						res.playmats.push({ name: row.name });
-					});
-					callback (res);
+			this.run('run', this.playmatCreate);
+			this.run('all' ,getPlaymats, [], (rows) => {
+				rows.forEach((row) => {
+					res.playmats.push({ name: row.name });
 				});
-			} catch (exception) { this.errorHandler('queryPlaymatList exception')(exception)}
+				callback (res);
+			});
 		});
 		this.close();
 	}
 	
 	createPlaymat(name, password, callback) {
-		console.log('Executing createPlaymat...');
+		this.set('createPlaymat', callback);
 		var insertPlaymat = "INSERT INTO playmat_list (creation, name, password) "+
 		                    "VALUES (DateTime('now'),?,?)" ; 
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.run(insertPlaymat, [name, password], (err, row) => {
-					if (err) {
-						this.errorHandler('createPlaymat error')(err);
-						if (err == 'Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: playmat_list.name') {
-							callback({ success: false, error : 'A playmat with this name already exists.'}) ;
-						} else {
-							callback({ success: false, error : err });
-						}
-					} else {
-						callback({ success: true });
-					}
-				});
-			} catch (exception) { this.errorHandler('createPlaymat exception')(exception)}
+			this.run('run' ,this.playmatCreate);
+			this.run('run' ,insertPlaymat, [name, password], (row) => {
+				callback({ success: true });
+			});
 		});
 		this.close();
 	}
 	
 	checkPassword(name, password, callback) {
-		console.log('Executing checkPassword...');
+		this.set('checkPassword', callback);
 		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name=? AND password=?" ; 
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.get(checkPlaymat, [name, password], (err, row) => {
-					if (err) {
-						this.errorHandler('checkPassword error')(err);
-						callback({ success: false, error : err}) ;
-					} else {
-						if (row == undefined) {
-							callback({ success: false, error : 'Incorrect password'}) ;
-						} else {
-							callback({ success: true });
-						}
-					}
-				});
-			} catch (exception) { this.errorHandler('checkPassword exception')(exception)}
+			this.run('run' ,this.playmatCreate);
+			this.run('get' ,checkPlaymat, [name, password], (row) => {
+				if (row == undefined) {
+					callback({ success: false, error : 'Incorrect password'}) ;
+				} else {
+					callback({ success: true });
+				}
+			});
 		});
 		this.close();
 	}
 	
 	register(playmat, alias, file, type, x, y, callback) {
-		// ToDo: Re-do this method, is aweful, it's not properly nested, and rage filled.
-		
-		console.log('Executing register...');
+		this.set('register', callback);
 		var insertObject   = "INSERT INTO objects (creation, alias, name, type) "+
 		                     "VALUES (DateTime('now'),? ,? ,? )" ; 
 		var deleteRelation = "DELETE FROM playmat_objects WHERE type='background' AND playmat=?"
@@ -140,271 +161,195 @@ class DB_sqlite3 {
 		                     "VALUES (DateTime('now'),? , (SELECT rowid FROM objects WHERE name=?), ?, '1.00', '1.0', '0.0', false, ?, ?)";
 		var res = { success: true, objects: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				this.db.run(insertObject, [alias, file, type], (err, row) => {
-					if (err) {
-						this.errorHandler('register error')(err);
-						if (err == 'Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: objects.name') {
-							callback({ success: false, error : 'An object with this name already exists.'}) ;
-						} else {
-							callback({ success: false, error : err });
-						}
-					}
-				});
-				if (type == 'background') {
-					this.db.run(deleteRelation, [playmat]);
-					x = 0 ;
-					y = 0 ;
-				}
-				this.db.run(insertRelation, [playmat, file, type, x, y], (err, row) => {
-					if (err) {
-						this.errorHandler('register error')(err);
-						callback({ success: false, error : err });
-					}
-				});
-				this.db.all(this.getAllObjects, [playmat], (err, rows) => {
-					if (err) {
-						this.errorHandler('register error')(err);
-						callback({ success: false, error : err });
+			this.run('run', this.playmatCreate);
+			this.run('run', this.objectsCreate);
+			this.run('run', this.playObjCreate);
+			this.db.run(insertObject, [alias, file, type], (err, row) => {
+				if (err) {
+					this.errorHandler('register error')(err);
+					if (err == 'Error: SQLITE_CONSTRAINT: UNIQUE constraint failed: objects.name') {
+						callback({ success: false, error : 'An object with this name already exists.'}) ;
 					} else {
-						rows.forEach((row) => {
-							res.objects.push(row);
-						});
-						callback (res);
+						callback({ success: false, error : err });
 					}
-				});
-				
-			} catch (exception) { this.errorHandler('register exception')(exception)}
+					this.close();
+				} else {
+					this.db.serialize(() => {
+						if (type == 'background') {
+							this.run('run', deleteRelation, [playmat]);
+							x = 0 ;
+							y = 0 ;
+						}
+						this.run('run', insertRelation, [playmat, file, type, x, y]);
+						this.run('all', this.getAllObjects, [playmat], (rows) => {
+							rows.forEach((row) => {
+								res.objects.push(row);
+							});
+							callback (res);
+						});
+					});
+					this.close();
+				}
+			});
 		});
-		this.close();
 	}
 	
 	updateObject(oldAlias, newAlias, newName, type, callback){
-		console.log('Executing updateObject...');
+		this.set('updateObject', callback);
 		var updateQuery = "UPDATE objects SET alias=?, name=? WHERE alias=?" ;
 		var queryObjects = "SELECT rowid,* FROM objects WHERE type=? ORDER BY alias" 
 		var res = { success: true, savedObjects: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				this.db.run(updateQuery, [newAlias, newName, oldAlias], (err, rows) => {
-					if (err) {
-						this.errorHandler('updateObject error')(err);
-						callback({ success: false, error : err });
-					}
+			this.run('run' ,this.objectsCreate);
+			this.run('run' ,this.playObjCreate);
+			this.run('run' ,updateQuery, [newAlias, newName, oldAlias]);
+			this.run('all' ,queryObjects, [type], (rows) => {				
+				rows.forEach((row) => {
+					res.savedObjects.push(row);
 				});
-				this.db.all(queryObjects, [type], (err, rows) => {
-					if (err) {
-						this.errorHandler('updateObject error')(err);
-						callback({ success: false, error : err });
-					} else {
-						rows.forEach((row) => {
-							res.savedObjects.push(row);
-						});
-						callback (res);
-					}
-				});
-			} catch (exception) { this.errorHandler('reuseObject exception')(exception)}
+				callback (res);
+			});
 		});
+		this.close();
 	}
 	
 	deleteObject(alias, type, callback){
-		console.log('Executing deleteObject...');
+		this.set('deleteObject', callback);
 		var deleteQuery1 = "DELETE FROM playmat_objects WHERE rowid=(SELECT rowid FROM objects WHERE alias=?)" ;
 		var deleteQuery2 = "DELETE FROM objects WHERE alias=?" ;
 		var queryObjects = "SELECT rowid,* FROM objects WHERE type=? ORDER BY alias" 
 		var res = { success: true, savedObjects: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				this.db.run(deleteQuery1, [alias]);
-				this.db.run(deleteQuery2, [alias]);
-				this.db.all(queryObjects, [type], (err, rows) => {
-					if (err) {
-						this.errorHandler('updateObject error')(err);
-						callback({ success: false, error : err });
-					} else {
-						rows.forEach((row) => {
-							res.savedObjects.push(row);
-						});
-						callback (res);
-					}
+			this.run('run' ,this.objectsCreate);
+			this.run('run' ,this.playObjCreate);
+			this.run('run' ,deleteQuery1, [alias]);
+			this.run('run' ,deleteQuery2, [alias]);
+			this.run('all' ,queryObjects, [type], (rows) => {
+				rows.forEach((row) => {
+					res.savedObjects.push(row);
 				});
-			} catch (exception) { this.errorHandler('reuseObject exception')(exception)}
+				callback (res);
+			});
 		});
 	}
 	
 	reuseObject(playmat, alias, x, y, callback) {
-		console.log('Executing reuseObject...');
+		this.set('reuseObject', callback);
 		var queryObject    = "SELECT rowid, type FROM objects WHERE alias=?";
 		var deleteRelation = "DELETE FROM playmat_objects WHERE type='background' AND playmat=?"
 		var insertRelation = "INSERT INTO playmat_objects (creation, playmat, object, type, scale, opacity, rotate,mirror , x, y) "+
 		                     "VALUES (DateTime('now'),? , ?, ?, '1.00', '1.0', '0.0', false, ?, ?)";
 		var res = { success: true, objects: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				this.db.get(queryObject, [alias], (err, row) => {
-					if (err) {
-						this.errorHandler('reuseObject error')(err);
-						callback({ success: false, error : err });
-						this.close();
-					} else {
-						this.db.serialize(() => {
-							if (row.type == 'background') {
-								this.db.run(deleteRelation, [playmat]);
-							}
-							this.db.run(insertRelation, [playmat, row.rowid, row.type, x, y]);
-							this.db.all(this.getAllObjects, [playmat], (err, rows) => {
-								if (err) {
-									this.errorHandler('reuseObject error')(err);
-									callback({ success: false, error : err });
-								} else {
-									rows.forEach((row) => {
-										res.objects.push(row);
-									});
-									callback (res);
-								}
+			this.run('run' ,this.playmatCreate);
+			this.run('run' ,this.objectsCreate);
+			this.run('run' ,this.playObjCreate);
+			this.run('get' , queryObject, [alias], (row) => {
+				this.db.serialize(() => {
+					if (row != undefined) {
+						if (row.type == 'background') {
+							this.run(deleteRelation, [playmat]);
+						}
+						this.run('run', insertRelation, [playmat, row.rowid, row.type, x, y]);
+						this.run('all' ,this.getAllObjects, [playmat], (rows) => {
+							rows.forEach((row) => {
+								res.objects.push(row);
 							});
+							callback (res);
 						});
-						this.close();
+					} else {
+						callback({ success: false, error : 'Object not found' });
 					}
+				}, () => {
+					this.close();
 				});
-			} catch (exception) { this.errorHandler('reuseObject exception')(exception)}
+				this.close();
+			});
+			
 		});
 	}
 	
 	updateToken(playmat, id, scale, opacity, rotate, mirror, x, y, callback){
-		console.log('Executing updateToken...');
+		this.set('updateToken', callback);
 		var updateObject = "UPDATE playmat_objects SET scale=?, opacity=?, rotate=?, mirror=?, x=?, y=? WHERE rowid=?";
 		var res = { success: true, objects: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				this.db.run(updateObject, [scale, opacity, rotate, mirror, x, y, id], (err, row) => {
-					if (err) {
-						this.errorHandler('updateToken error')(err);
-						callback({ success: false, error : err });
-					}
+			this.run('run', this.playmatCreate);
+			this.run('run', this.objectsCreate);
+			this.run('run', this.playObjCreate);
+			this.run('run', updateObject, [scale, opacity, rotate, mirror, x, y, id]);
+			this.run('all', this.getAllObjects, [playmat], (rows) => {
+				rows.forEach((row) => {
+					res.objects.push(row);
 				});
-				this.db.all(this.getAllObjects, [playmat], (err, rows) => {
-					if (err) {
-						this.errorHandler('updateToken error')(err);
-						callback({ success: false, error : err });
-					} else {
-						rows.forEach((row) => {
-							res.objects.push(row);
-						});
-						callback (res);
-					}
-				});
-			} catch (exception) { this.errorHandler('updateToken exception')(exception)}
+				callback (res);
+			});
 		});
 		this.close();
 	}
 	
 	deleteToken(playmat, id, callback){
-		console.log('Executing deleteToken...');
+		this.set('deleteToken', callback);
 		var deleteObject = "DELETE FROM playmat_objects WHERE rowid=?" ;
 		var res = { success: true, objects: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				this.db.run(deleteObject, [id], (err, row) => {
-					if (err) {
-						this.errorHandler('deleteToken error')(err);
-						callback({ success: false, error : err });
-					}
+			this.run('run', this.playmatCreate);
+			this.run('run', this.objectsCreate);
+			this.run('run', this.playObjCreate);
+			this.run('run', deleteObject, [id]);
+			this.run('all', this.getAllObjects, [playmat], (rows) => {
+				rows.forEach((row) => {
+					res.objects.push(row);
 				});
-				this.db.all(this.getAllObjects, [playmat], (err, rows) => {
-					if (err) {
-						this.errorHandler('deleteToken error')(err);
-						callback({ success: false, error : err });
-					} else {
-						rows.forEach((row) => {
-							res.objects.push(row);
-						});
-						callback (res);
-					}
-				});
-			} catch (exception) { this.errorHandler('deleteToken exception')(exception)}
+				callback (res);
+			});
 		});
 		this.close();
 	}
 	
 	getObjects(type, callback){
-		console.log('Executing getObjects...');
+		this.set('getObjects', callback);
 		var queryObjects = "SELECT rowid,* FROM objects WHERE type=? ORDER BY alias" ;
 		var res = { success: true, savedObjects: [] } ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				this.db.all(queryObjects, [type], (err, rows) => {
-					if (err) {
-						this.errorHandler('getObjects error')(err);
-						callback({ success: false, error : err });
-					} else {
-						rows.forEach((row) => {
-							res.savedObjects.push(row);
-						});
-						callback (res);
-					}
+			this.run('run', this.playmatCreate);
+			this.run('run', this.objectsCreate);
+			this.run('run', this.playObjCreate);
+			this.run('all', queryObjects, [type], (rows) => {
+				rows.forEach((row) => {
+					res.savedObjects.push(row);
 				});
-			} catch (exception) { this.errorHandler('getObjects exception')(exception)}
+				callback (res);
+			});
 		});
 		this.close();
 	}
 	
 	joinPlaymat(name, password, user, callback) {
-		console.log('Executing joinPlaymat...');
+		this.set('joinPlaymat', callback);
 		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name=? AND password=?" ; 
 		var res = { success: true, objects:[], id: -1} ;
 		this.db.serialize(() => {
-			try {
-				this.db.run(this.playmatCreate);
-				this.db.run(this.objectsCreate);
-				this.db.run(this.playObjCreate);
-				var test = this.db.get(checkPlaymat, [name, password], (err, row) => {
-					if (err) {
-						this.errorHandler('joinPlaymat error')(err);
-						callback({ success: false, error : err}) ;
-						this.close();
-					} else {
-						if (row == undefined) {
-							callback({ success: false, error : 'Incorrect password'}) ;
-							this.close();
-						} else {
-							res.id = row.rowid ;
-							this.db.all(this.getAllObjects, [row.rowid], (err, rows) => {
-								if (err) {
-									this.errorHandler('joinPlaymat error')(err);
-									callback({ success: false, error : err });
-									this.close();
-								} else {
-									rows.forEach((row) => {
-										res.objects.push(row);
-									});
-									callback (res);
-									this.close();
-								}
-							});
-						}
-					}
-				});
-			} catch (exception) { this.errorHandler('joinPlaymat exception')(exception)}
+			this.run('run', this.playmatCreate);
+			this.run('run', this.objectsCreate);
+			this.run('run', this.playObjCreate);
+			this.run('get', checkPlaymat, [name, password], (row) => {
+				if (row == undefined) {
+					callback({ success: false, error : 'Incorrect password'}) ;
+					this.close();
+				} else {
+					res.id = row.rowid ;
+					this.run('all', this.getAllObjects, [row.rowid], (rows) => {
+						rows.forEach((row) => {
+							res.objects.push(row);
+						});
+						callback (res);
+					});
+					this.close();
+				}
+			}, () => {
+				this.close();
+			});
 		});
 		
 	}
