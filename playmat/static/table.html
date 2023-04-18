@@ -6,6 +6,7 @@
 		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 		<script src="./helper.js"></script>
 		<script src="./board.js"></script>
+		<script src="./library.js"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -70,38 +71,7 @@
 						fileDialog(false, '/import',['.jpg','.png','.gif'],'Import a background', 'File import', props, process);
 					});
 					$('#existBackgroundButton').on().click(function (){
-						var html = '<ul id="backgroundLibrayList"></ul>' ;
-						var dialog = $('<div></div>').html(html).dialog({
-							width: 'auto',
-							modal: true,
-							resizable: false,
-							title: 'Available backgrounds',
-							beforeClose: () => {
-								$('#backgroundLibrayList').parent().remove();
-							}
-						});
-						$.post('/getObjects',{ type:'background' },(res) => {
-							res = JSON.parse(res);
-							if (res.success == false) {
-								betterAlert(res.error.code || res.error, 'An error has ocurred.');
-							} else {
-								for (var i = 0 ; i < res.savedObjects.length ; i++) {
-									var obj = res.savedObjects[i];
-									var url = obj.name ;
-									if (!(url.indexOf('http://') == 0 || url.indexOf('https://')) == 0) {
-										url = './assets/' + url ;
-									}
-									var code = '<li class="library" id="library_'+obj.rowid+'" alias="'+obj.alias+'" >'+obj.alias+'</div>';
-									$('#backgroundLibrayList').append(code);
-									$('#library_'+obj.rowid).on().click(function (event) {
-										$.post('/reUseToken', { playmat: id, alias: $(this).attr('alias'), x: $(window).scrollLeft(), y: $(window).scrollTop() }, (res)=>{
-											dialog.dialog('close');
-											process(JSON.parse(res));
-										});
-									});
-								}
-							}
-						});
+						libraryDialog(id, 'background', false, process);
 					});
 					$('#uploadTokenButton').on().click(function (){
 						var props = { type: 'token', playmat: id, x: $(window).scrollLeft(), y: $(window).scrollTop() } ;
@@ -112,39 +82,7 @@
 						fileDialog(false, '/import',['.jpg','.png','.gif'],'Import a token', 'File import', props, process);
 					});
 					$('#existTokenButton').on().click(function (){
-						var html = '<div class="thumbContainer"></div>' ;
-						var dialog = $('<div></div>').html(html).dialog({
-							width: 'auto',
-							modal: true,
-							resizable: false,
-							title: 'Available tokens',
-							beforeClose: () => {
-								$('.thumbContainer').parent().remove();
-							}
-						});
-						$('.thumbContainer').parent().parent().css({position:"fixed", left:"30px", right:"30px", top:"30px", bottom:"30px", 'overflow-y': "auto"});
-						$.post('/getObjects',{ type:'token' },(res) => {
-							res = JSON.parse(res);
-							if (res.success == false) {
-								betterAlert(res.error.code || res.error, 'An error has ocurred.');
-							} else {
-								for (var i = 0 ; i < res.savedObjects.length ; i++) {
-									var obj = res.savedObjects[i];
-									var url = obj.name ;
-									if (!(url.indexOf('http://') == 0 || url.indexOf('https://')) == 0) {
-										url = './assets/' + url ;
-									}
-									var code = '<div class="previewHolder" id="preview_'+obj.rowid+'" alias="'+obj.alias+'"><img src="'+url+'" class="imagePreview"><br/>'+obj.alias+'</div>';
-									$('.thumbContainer').append(code);
-									$('#preview_'+obj.rowid).on().click(function (event) {
-										$.post('/reUseToken', { playmat: id, alias: $(this).attr('alias'), x: $(window).scrollLeft(), y: $(window).scrollTop() }, (res)=>{
-											dialog.dialog('close');
-											process(JSON.parse(res));
-										});
-									});
-								}
-							}
-						});
+						libraryDialog(id, 'token', true, process);
 					});
 					$('#exitButton').on().click(function() {
 						betterConfirm('Do you really want to exit?','Confirm',
@@ -168,7 +106,7 @@
 			<div class="menuPlaceholder" id="playmatNameHolder"    >Playmat name: <span     class="mark" id="playmatNameShow"></span></div>
 			<div class="menuPlaceholder" id="playmatPasswordHolder">Playmat password: <span class="mark" id="playmatPassShow"></span></div>
 			<div class="menuPlaceholder"                           >&nbsp;</div>
-			<div class="menuSelection"   id="destroyPlaymatButton" >Destroy this playmat</div>
+			<div class="menuSelection"   id="managePlaymatButton" >Manage this playmat</div>
 		</div>
 		<div class="dialog" id="backgroundMenu" style="display: none" parentMenu="mainMenu">
 			<div class="menuSelection" id="uploadBackgroundButton" >Upload a new background</div>

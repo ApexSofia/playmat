@@ -182,8 +182,65 @@ class DB_sqlite3 {
 		this.close();
 	}
 	
-	reUseToken(playmat, alias, x, y, callback) {
-		console.log('Executing reUseToken...');
+	updateObject(oldAlias, newAlias, newName, type, callback){
+		console.log('Executing updateObject...');
+		var updateQuery = "UPDATE objects SET alias=?, name=? WHERE alias=?" ;
+		var queryObjects = "SELECT rowid,* FROM objects WHERE type=? ORDER BY alias" 
+		var res = { success: true, savedObjects: [] } ;
+		this.db.serialize(() => {
+			try {
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
+				this.db.run(updateQuery, [newAlias, newName, oldAlias], (err, rows) => {
+					if (err) {
+						this.errorHandler('updateObject error')(err);
+						callback({ success: false, error : err });
+					}
+				});
+				this.db.all(queryObjects, [type], (err, rows) => {
+					if (err) {
+						this.errorHandler('updateObject error')(err);
+						callback({ success: false, error : err });
+					} else {
+						rows.forEach((row) => {
+							res.savedObjects.push(row);
+						});
+						callback (res);
+					}
+				});
+			} catch (exception) { this.errorHandler('reuseObject exception')(exception)}
+		});
+	}
+	
+	deleteObject(alias, type, callback){
+		console.log('Executing deleteObject...');
+		var deleteQuery1 = "DELETE FROM playmat_objects WHERE rowid=(SELECT rowid FROM objects WHERE alias=?)" ;
+		var deleteQuery2 = "DELETE FROM objects WHERE alias=?" ;
+		var queryObjects = "SELECT rowid,* FROM objects WHERE type=? ORDER BY alias" 
+		var res = { success: true, savedObjects: [] } ;
+		this.db.serialize(() => {
+			try {
+				this.db.run(this.objectsCreate);
+				this.db.run(this.playObjCreate);
+				this.db.run(deleteQuery1, [alias]);
+				this.db.run(deleteQuery2, [alias]);
+				this.db.all(queryObjects, [type], (err, rows) => {
+					if (err) {
+						this.errorHandler('updateObject error')(err);
+						callback({ success: false, error : err });
+					} else {
+						rows.forEach((row) => {
+							res.savedObjects.push(row);
+						});
+						callback (res);
+					}
+				});
+			} catch (exception) { this.errorHandler('reuseObject exception')(exception)}
+		});
+	}
+	
+	reuseObject(playmat, alias, x, y, callback) {
+		console.log('Executing reuseObject...');
 		var queryObject    = "SELECT rowid, type FROM objects WHERE alias=?";
 		var deleteRelation = "DELETE FROM playmat_objects WHERE type='background' AND playmat=?"
 		var insertRelation = "INSERT INTO playmat_objects (creation, playmat, object, type, scale, opacity, rotate,mirror , x, y) "+
@@ -196,7 +253,7 @@ class DB_sqlite3 {
 				this.db.run(this.playObjCreate);
 				this.db.get(queryObject, [alias], (err, row) => {
 					if (err) {
-						this.errorHandler('reUseToken error')(err);
+						this.errorHandler('reuseObject error')(err);
 						callback({ success: false, error : err });
 						this.close();
 					} else {
@@ -207,7 +264,7 @@ class DB_sqlite3 {
 							this.db.run(insertRelation, [playmat, row.rowid, row.type, x, y]);
 							this.db.all(this.getAllObjects, [playmat], (err, rows) => {
 								if (err) {
-									this.errorHandler('reUseToken error')(err);
+									this.errorHandler('reuseObject error')(err);
 									callback({ success: false, error : err });
 								} else {
 									rows.forEach((row) => {
@@ -220,7 +277,7 @@ class DB_sqlite3 {
 						this.close();
 					}
 				});
-			} catch (exception) { this.errorHandler('reUseToken exception')(exception)}
+			} catch (exception) { this.errorHandler('reuseObject exception')(exception)}
 		});
 	}
 	

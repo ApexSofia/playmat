@@ -10,6 +10,10 @@ exports.createPlaymat = function(req,res) {
 	db.createPlaymat(req.body.playmat, req.body.password, (obj) => { res.end(JSON.stringify(obj)) });
 };
 
+exports.updatePlaymat = function(req,res) {
+	res.send('');
+};
+
 exports.removePlaymat = function(req,res) {
 	res.send('');
 };
@@ -36,9 +40,15 @@ exports.upload = function(req,res) {
 		
 		var db = new DB();
 		db.register(fields.playmat, fields.fileName, fields.fileName + extension, fields.type, fields.x, fields.y, (obj => { 
-			fs.rename(filepath, newpath, function () {
-				res.end(JSON.stringify(obj)); 
-			});
+			if (obj.sucess == false ) {
+				fs.unlink(filepath, function() {
+					res.end(JSON.stringify(obj)); 
+				});
+			} else {
+				fs.rename(filepath, newpath, function () {
+					res.end(JSON.stringify(obj)); 
+				});
+			}
 		}));
 	});
 };
@@ -50,9 +60,41 @@ exports.importFromWeb = function(req,res) {
 	});
 }
 
-exports.reUseToken =  function(req,res) {
+exports.updateObject = function(req,res) {
+	let fs = require('fs');
 	var db = new DB();
-	db.reUseToken(req.body.playmat, req.body.alias, req.body.x, req.body.y, (obj) => { 
+	if (req.body.local == false) {
+		db.updateObject(req.body.oldAlias, req.body.newAlias, req.body.type, (obj) => { 
+			res.end(JSON.stringify(obj)); 
+		});
+	} else {
+		fs.rename('assets/'+req.body.oldFile, 'assets/'+req.body.newFile, () => {
+			db.updateObject(req.body.oldAlias, req.body.newAlias, req.body.newFile, req.body.type, (obj) => { 
+				res.end(JSON.stringify(obj)); 
+			});
+		});
+	}
+};
+
+exports.deleteObject = function(req,res) {
+	let fs = require('fs');
+	var db = new DB();
+	if (req.body.local == false) {
+		db.deleteObject(req.body.alias, req.body.type, (obj) => { 
+			res.end(JSON.stringify(obj)); 
+		});
+	} else {
+		fs.unlink('assets/'+req.body.file, () => {
+			db.deleteObject(req.body.alias, req.body.type, (obj) => { 
+				res.end(JSON.stringify(obj)); 
+			});
+		});
+	}
+};
+
+exports.reuseObject =  function(req,res) {
+	var db = new DB();
+	db.reuseObject(req.body.playmat, req.body.alias, req.body.x, req.body.y, (obj) => { 
 		res.end(JSON.stringify(obj)); 
 	});
 }
@@ -73,13 +115,13 @@ exports.getObjects = function(req, res) {
 }
 
 exports.table = function(req,res) {
+	let fs = require('fs');
 	var sanitize = (text) => {
 		return text.replace(/"/g, '&quot;');
 	};
 	var input = (name, value) => {
 		return '<input id="'+name+'" type="hidden" value="'+value+'"/>';
 	};
-	let fs = require('fs');
 	var db = new DB();
 	db.joinPlaymat(req.body.playmatName, req.body.playmatPass, req.body.playerName, (obj) => {
 		fs.readFile('./static/table.html', 'utf8', (err, data) => {
