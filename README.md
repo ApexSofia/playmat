@@ -3,11 +3,9 @@ Playmat is a open source easy to use virtual table for multiple players.
 Made for Node and working with sqlite3.
 
 Short term ToDo:
- + Destroy playmat
- + Change playmat name and password
+ + Notify
 
 Medium term ToDo:
- + Notify
  + Dice rolling
  + + Initiative scorekeeping
  + + Custom dice roll
@@ -17,3 +15,4 @@ Medium term ToDo:
  
  Long term ToDo:
   + Mobile UI 
+  + Token categories (?)

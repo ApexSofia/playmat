@@ -11,11 +11,13 @@ exports.createPlaymat = function(req,res) {
 };
 
 exports.updatePlaymat = function(req,res) {
-	res.send('');
+	var db = new DB() ;
+	db.updatePlaymat(req.body.id, req.body.newName, req.body.newPassword, (obj) => { res.end(JSON.stringify(obj)) });
 };
 
 exports.removePlaymat = function(req,res) {
-	res.send('');
+	var db = new DB() ;
+	db.removePlaymat(req.body.id, (obj) => { res.end(JSON.stringify(obj)) });
 };
 
 exports.checkPassword = function(req,res) {
@@ -124,16 +126,20 @@ exports.table = function(req,res) {
 	};
 	var db = new DB();
 	db.joinPlaymat(req.body.playmatName, req.body.playmatPass, req.body.playerName, (obj) => {
-		fs.readFile('./static/table.html', 'utf8', (err, data) => {
-			if (err) {
-				res.send(err);
-			} else {
-				var initialData = '\n\t\t'+ input('playmatName',sanitize(req.body.playmatName))+
-				                  '\n\t\t'+ input('playmatPass',sanitize(req.body.playmatPass))+
-				                  '\n\t\t'+ input('initialData',sanitize(JSON.stringify(obj.objects)));
-				data = data.replace(input('playmatId','-1'),input('playmatId',obj.id)+initialData);
-				res.end(data);
-			}
-		});
+		if (obj.success == false) {
+			res.send(obj.error);
+		} else {
+			fs.readFile('./static/table.html', 'utf8', (err, data) => {
+				if (err) {
+					res.send(err);
+				} else {
+					var initialData = '\n\t\t'+ input('playmatName',sanitize(req.body.playmatName))+
+									  '\n\t\t'+ input('playmatPass',sanitize(req.body.playmatPass))+
+									  '\n\t\t'+ input('initialData',sanitize(JSON.stringify(obj.objects)));
+					data = data.replace(input('playmatId','-1'),input('playmatId',obj.id)+initialData);
+					res.end(data);
+				}
+			});
+		}
 	});
 }

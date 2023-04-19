@@ -98,7 +98,7 @@ class DB_sqlite3 {
 				this.db.all(query, params, handler);
 			}
 		} catch (exception) { 
-			this.errorHandler('Exception executing ' + this.method, callback)(exception)
+			this.errorHandler('Exception executing ' + this.method, callback)(exception);
 		}
 	}
 	
@@ -109,7 +109,7 @@ class DB_sqlite3 {
 	
 	queryPlaymatList(callback) {
 		this.set('queryPlaymatList', callback);
-		var getPlaymats = 'SELECT name FROM playmat_list ORDER BY creation' ;
+		var getPlaymats = "SELECT name FROM playmat_list ORDER BY creation" ;
 		var res = { success: true, playmats: [] } ;
 		this.db.serialize(() => {
 			this.run('run', this.playmatCreate);
@@ -130,6 +130,32 @@ class DB_sqlite3 {
 		this.db.serialize(() => {
 			this.run('run' ,this.playmatCreate);
 			this.run('run' ,insertPlaymat, [name, password], (row) => {
+				callback({ success: true });
+			});
+		});
+		this.close();
+	}
+	
+	updatePlaymat(id, newName, newPassword, callback) {
+		this.set('updatePlaymat', callback);
+		var updatePlaymat = "UPDATE playmat_list SET name=?, password=? WHERE rowid=?" ;
+		this.db.serialize(() => {
+			this.run('run' ,this.playmatCreate);
+			this.run('run' ,updatePlaymat, [newName, newPassword, id], (row) => {
+				callback({ success: true });
+			});
+		});
+		this.close();
+	}
+	
+	removePlaymat(id, callback) {
+		this.set('removePlaymat', callback);
+		var deleteObjects = "DELETE FROM playmat_objects WHERE playmat=?" ;
+		var deletePlaymat = "DELETE FROM playmat_list WHERE rowid=?" ;
+		this.db.serialize(() => {
+			this.run('run' ,this.playmatCreate);
+			this.run('run' ,deleteObjects, [id]);
+			this.run('run' ,deletePlaymat, [id], (row) => {
 				callback({ success: true });
 			});
 		});
@@ -222,7 +248,7 @@ class DB_sqlite3 {
 		this.db.serialize(() => {
 			this.run('run' ,this.objectsCreate);
 			this.run('run' ,this.playObjCreate);
-			this.run('run' ,deleteQuery1, [alias]);
+			this.run('run' ,deleteQuery1, [alias]); //////////////////////
 			this.run('run' ,deleteQuery2, [alias]);
 			this.run('all' ,queryObjects, [type], (rows) => {
 				rows.forEach((row) => {
@@ -231,6 +257,7 @@ class DB_sqlite3 {
 				callback (res);
 			});
 		});
+		this.close();
 	}
 	
 	reuseObject(playmat, alias, x, y, callback) {
@@ -260,12 +287,11 @@ class DB_sqlite3 {
 					} else {
 						callback({ success: false, error : 'Object not found' });
 					}
-				}, () => {
-					this.close();
 				});
 				this.close();
+			}, () => {
+				this.close();
 			});
-			
 		});
 	}
 	
@@ -351,7 +377,6 @@ class DB_sqlite3 {
 				this.close();
 			});
 		});
-		
 	}
 };
 

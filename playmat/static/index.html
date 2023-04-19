@@ -55,7 +55,7 @@
 								if (check(['joinPlaymat','joinPass','joinUser'])) {
 									$.post('/checkPassword', 
 										{ 
-											playmat:  $('#joinPlaymat').val(), 
+											playmat:  $('input[type=radio]:checked').val(), 
 											password: $('#joinPass').val()
 										},
 										function (data) {
