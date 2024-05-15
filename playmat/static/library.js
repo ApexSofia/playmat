@@ -73,7 +73,7 @@ var libraryDialog = function(id, type, withThumbnails, callback) {
 								newName  = newName.replace(alias, newAlias);
 							}
 							if (alias != newAlias) {
-								$.post('/updateObject', { oldAlias: alias, newAlias: newAlias, type: type, local: local, oldFile: filen, newFile: newName}, process);
+								$.post('/updateObject', { playmat: id, oldAlias: alias, newAlias: newAlias, type: type, local: local, oldFile: filen, newFile: newName}, process);
 							} else {
 								anotherDialog.dialog('close'); 
 							}

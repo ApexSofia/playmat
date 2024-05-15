@@ -35,6 +35,7 @@
 				};
 			
 				var id = $('#playmatId').val();
+				var pname = $('#playerName').val();
 				if (id == -1) {
 					betterAlert('An error has ocurrerd, redirecting to main screen', 'Error', function(){
 						window.location.href = 'index.html' ;
@@ -133,6 +134,23 @@
 							() => { toggleMenu('mainMenu'); })
 					});
 				}
+				
+				var webSocket = new WebSocket('ws://localhost:8001/update');
+				webSocket.onopen = function(event) {
+					var data = { action    : 'register',
+					             playmatId : id,
+					             playerName: pname
+					           };
+					webSocket.send(JSON.stringify(data));
+				};
+				webSocket.onmessage = function(event) {
+					var obj = JSON.parse(event.data) ;
+					if (obj.success == true && obj.objects != undefined && obj.object != {}) {
+						processBoard(obj.objects);
+					};
+				};
+				
+
 			});
 		</script>
 	</head>

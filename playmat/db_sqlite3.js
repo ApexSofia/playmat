@@ -248,7 +248,7 @@ class DB_sqlite3 {
 		this.db.serialize(() => {
 			this.run('run' ,this.objectsCreate);
 			this.run('run' ,this.playObjCreate);
-			this.run('run' ,deleteQuery1, [alias]); //////////////////////
+			this.run('run' ,deleteQuery1, [alias]);
 			this.run('run' ,deleteQuery2, [alias]);
 			this.run('all' ,queryObjects, [type], (rows) => {
 				rows.forEach((row) => {
