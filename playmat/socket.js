@@ -28,7 +28,7 @@ class BroadcastSocket {
 	
 	cast (id, data) {
 		this.wss.clients.forEach(function each(client) {
-			if (client.readyState === ws.WebSocket.OPEN) {
+			if (client.readyState === ws.WebSocket.OPEN && client.playmat == id) {
 				client.send(data, { binary: false });
 			}
 		});
