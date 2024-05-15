@@ -1,6 +1,7 @@
 const DB        = require ('./db_sqlite3');
 const BroadCast = require('./socket.js');
 const bcast     = new BroadCast();
+const config  = require('./config');
 
 exports.getAllPlaymats = function(req,res) {
 	var db = new DB() ;
@@ -162,6 +163,7 @@ exports.table = function(req,res) {
 					var initialData = '\n\t\t'+ input('playmatName',sanitize(req.body.playmatName))+
 									  '\n\t\t'+ input('playmatPass',sanitize(req.body.playmatPass))+
 									  '\n\t\t'+ input('playerName' ,sanitize(req.body.playerName))+
+									  '\n\t\t'+ input('socketPort' ,sanitize(config.socket.port + ''))+
 									  '\n\t\t'+ input('initialData',sanitize(JSON.stringify(obj.objects)));
 					data = data.replace(input('playmatId','-1'),input('playmatId',obj.id)+initialData);
 					res.end(data);

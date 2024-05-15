@@ -135,7 +135,9 @@
 					});
 				}
 				
-				var webSocket = new WebSocket('ws://localhost:8001/update');
+				var url = $(location).attr("hostname") + ':' + $('#socketPort').val() + $(location).attr("pathname") ;
+				url = 'ws://' + url.replace('table.html','update');
+				var webSocket = new WebSocket(url);
 				webSocket.onopen = function(event) {
 					var data = { action    : 'register',
 					             playmatId : id,
