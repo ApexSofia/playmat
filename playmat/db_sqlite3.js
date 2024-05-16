@@ -89,12 +89,15 @@ class DB_sqlite3 {
 		} ;
 		try {
 			if (type == 'run') {
+				console.log(query+'\n');
 				this.db.run(query, params, handler);
 			}
 			if (type == 'get') {
+				console.log(query+'\n');
 				this.db.get(query, params, handler);
 			}
 			if (type == 'all') {
+				console.log(query+'\n');
 				this.db.all(query, params, handler);
 			}
 		} catch (exception) { 
@@ -275,8 +278,8 @@ class DB_sqlite3 {
 				this.db.serialize(() => {
 					if (row != undefined) {
 						if (row.type == 'background') {
-							this.run(deleteRelation, [playmat]);
-						}
+							this.run('run',deleteRelation, [playmat]);
+							}
 						this.run('run', insertRelation, [playmat, row.rowid, row.type, x, y]);
 						this.run('all' ,this.getAllObjects, [playmat], (rows) => {
 							rows.forEach((row) => {
