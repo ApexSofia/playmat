@@ -3,48 +3,46 @@ const randomService = require('./random.js');
 
 class DB_sqlite3 {
 	
-	playmatCreate = "CREATE TABLE IF NOT EXISTS playmat_list (\n"+
-					"creation DATE         NOT NULL,\n"+
-					"name     VARCHAR(100) NOT NULL,\n"+
-					"password VARCHAR(100) NOT NULL,\n"+
-					"UNIQUE   (name))";
-					
-	objectsCreate = "CREATE TABLE IF NOT EXISTS objects (\n"+
-					"creation DATE         NOT NULL, \n"+
-					"alias    VARCHAR(100) NOT NULL, \n"+
-					"name     VARCHAR(100) NOT NULL, \n"+
-					"type     VARCHAR(20)  NOT NULL, \n"+
-					"UNIQUE   (alias),\n"+
-					"UNIQUE   (name))";
-					
-	playObjCreate = "CREATE TABLE IF NOT EXISTS playmat_objects (\n"+
-					"creation DATE         NOT NULL, \n"+
-					"playmat  INT          NOT NULL, \n"+
-					"object   INT          NOT NULL, \n"+
-					"type     VARCHAR(20)  NOT NULL, \n"+
-					"scale    DECIMAL(5,2) NOT NULL, \n"+
-					"opacity  DECIMAL(1,2) NOT NULL, \n"+
-					"rotate   DECIMAL(3,2) NOT NULL, \n"+
-					"mirror   INT          NOT NULL, \n"+
-					"x        INT          NOT NULL, \n"+
-					"y        INT          NOT NULL, \n"+
-					"FOREIGN KEY(playmat) REFERENCES playmat_list(rowid),\n"+
-					"FOREIGN KEY(object)  REFERENCES objects(rowid))";
-					
-	getAllObjects = "SELECT playmat_objects.rowid, \n"+
-	                "       playmat_objects.type, \n"+
-					"       playmat_objects.scale, \n"+
-					"       playmat_objects.opacity, \n"+
-					"       playmat_objects.rotate, \n"+
-					"       playmat_objects.mirror, \n"+
-					"       playmat_objects.x, \n"+
-					"       playmat_objects.y, \n"+
-					"       objects.name \n"+
-		            "FROM playmat_objects LEFT JOIN objects "+
-					"ON playmat_objects.object = objects.rowid WHERE playmat=?";
-					
-	
 	constructor() {
+		this.playmatCreate= "CREATE TABLE IF NOT EXISTS playmat_list (\n"+
+							"creation DATE         NOT NULL,\n"+
+							"name     VARCHAR(100) NOT NULL,\n"+
+							"password VARCHAR(100) NOT NULL,\n"+
+							"UNIQUE   (name))";
+						
+		this.objectsCreate= "CREATE TABLE IF NOT EXISTS objects (\n"+
+							"creation DATE         NOT NULL, \n"+
+							"alias    VARCHAR(100) NOT NULL, \n"+
+							"name     VARCHAR(100) NOT NULL, \n"+
+							"type     VARCHAR(20)  NOT NULL, \n"+
+							"UNIQUE   (alias),\n"+
+							"UNIQUE   (name))";
+						
+		this.playObjCreate= "CREATE TABLE IF NOT EXISTS playmat_objects (\n"+
+							"creation DATE         NOT NULL, \n"+
+							"playmat  INT          NOT NULL, \n"+
+							"object   INT          NOT NULL, \n"+
+							"type     VARCHAR(20)  NOT NULL, \n"+
+							"scale    DECIMAL(5,2) NOT NULL, \n"+
+							"opacity  DECIMAL(1,2) NOT NULL, \n"+
+							"rotate   DECIMAL(3,2) NOT NULL, \n"+
+							"mirror   INT          NOT NULL, \n"+
+							"x        INT          NOT NULL, \n"+
+							"y        INT          NOT NULL, \n"+
+							"FOREIGN KEY(playmat) REFERENCES playmat_list(rowid),\n"+
+							"FOREIGN KEY(object)  REFERENCES objects(rowid))";
+						
+		this.getAllObjects= "SELECT playmat_objects.rowid, \n"+
+							"       playmat_objects.type, \n"+
+							"       playmat_objects.scale, \n"+
+							"       playmat_objects.opacity, \n"+
+							"       playmat_objects.rotate, \n"+
+							"       playmat_objects.mirror, \n"+
+							"       playmat_objects.x, \n"+
+							"       playmat_objects.y, \n"+
+							"       objects.name \n"+
+							"FROM playmat_objects LEFT JOIN objects "+
+							"ON playmat_objects.object = objects.rowid WHERE playmat=?";
 		console.log('Connecting to the playmat database.');
 		this.db = new sqlite3.Database('./db/playmat.db', this.errorHandler('Connection error'));
 	}
@@ -99,7 +97,7 @@ class DB_sqlite3 {
 				this.db.all(query, params, handler);
 			}
 		} catch (exception) { 
-			this.errorHandler('Exception executing ' + this.method, callback)(exception);
+			this.errorHandler('Exception executing ' + this.method, this.callback)(exception);
 		}
 	}
 	
