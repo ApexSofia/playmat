@@ -1,4 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
+const randomService = require('./random.js');
 
 class DB_sqlite3 {
 	
@@ -371,6 +372,40 @@ class DB_sqlite3 {
 						});
 						callback (res);
 					});
+					this.close();
+				}
+			}, () => {
+				this.close();
+			});
+		});
+	}
+	
+	getRandomNumber(min, max, callback) {
+		var createRandom = "CREATE TABLE IF NOT EXISTS random_numbers (number INT NOT NULL)";
+		var checkNumber  = "SELECT rowid, number FROM random_numbers";
+		var deleteNumber = "DELETE FROM random_numbers WHERE rowid=?";
+		var insertNumber = "INSERT INTO random_numbers (number) VALUES (?)" ;
+		var process = (x) => { return parseInt(Math.floor((parseInt(x) - 1) / (1200 / (parseInt(max) - parseInt(min) + 1))) + parseInt(min)) ; } ;
+		var res = { success: true, number: -1} ;
+		this.db.serialize(() => {
+			this.run('run', createRandom);
+			this.run('get', checkNumber, [], (row) => {
+				if (row == undefined) {
+					var service= new randomService();
+					service.getNumbers((numbers) => {
+						this.db.serialize(() => {
+							res.number = process(numbers[0])
+							for (var i = 1; i < numbers.length ; i++) {
+								this.run('run', insertNumber, [numbers[i]]);
+							}					
+							callback (res);
+							this.close();
+						});
+					});
+				} else {
+					res.number = process(row.number) ;
+					this.run('run',deleteNumber, [row.rowid]);
+					callback (res);
 					this.close();
 				}
 			}, () => {

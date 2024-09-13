@@ -177,12 +177,19 @@ var check = function (fields) {
 	return true ;
 };
 
+var closeMenu  = function(dialogName) {
+	$('#'+dialogName).dialog('close');
+	$('div[parentMenu='+dialogName+']').dialog('close');
+}
+
 var toggleMenu = function(dialogName) {
 	var isOpen = $('#'+dialogName).dialog("isOpen");
 	if (!isOpen) {
 		var parentMenu = $('#'+dialogName).attr('parentMenu');
 		if (parentMenu) {
-			$('div[parentMenu='+parentMenu+']').dialog('close');
+			$('div[parentMenu='+parentMenu+']').each(function (index,element) {
+				closeMenu(element.id);
+			});
 		}
 		$('#'+dialogName).dialog('open');
 		$('div[aria-describedby='+dialogName+'] div.ui-dialog-titlebar').hide();
@@ -192,6 +199,8 @@ var toggleMenu = function(dialogName) {
 		$('div[parentMenu='+dialogName+']').dialog('close');
 	}						
 };
+
+//var randomG
 
 var exists = function(element) {
 	return $(element).length > 0 ;

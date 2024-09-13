@@ -7,12 +7,13 @@
 		<script src="./helper.js"></script>
 		<script src="./board.js"></script>
 		<script src="./library.js"></script>
+		<script src="./dice.js" type="module"></script>
 		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="./style.css">
 		<link rel="icon" type="image/x-icon" href="favicon.ico">
 		<script>
 			$(function() {				
-				var buildMenu = (menu, position) => {
+				var buildMenu = (menu, position, direction) => {
 					$('#'+menu).dialog({
 						position: position,
 						autoOpen: false,
@@ -20,11 +21,13 @@
 						height: 'auto',
 						show: {
 							effect: "blind",
-							duration: 500
+							duration: 500,
+							direction: direction || 'up'
 						},
 						hide: {
 							effect: "blind",
-							duration: 500
+							duration: 500,
+							direction: direction || 'up'
 						}
 					});
 					$('div[aria-describedby='+menu+'] div.ui-dialog-titlebar').hide();
@@ -47,9 +50,10 @@
 					$('#playmatPassShow').text($('#playmatPass').val());
 					
 					buildMenu('mainMenu',       { my: "left top+5",    at: "left bottom", of: $('#mainButton') });
-					buildMenu('playmatMenu',    { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
-					buildMenu('backgroundMenu', { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
-					buildMenu('tokenMenu',      { my: "left+10 top-5", at: "right top",   of: $('#mainMenu') });
+					buildMenu('playmatMenu',    { my: "left+10 top-6", at: "right top",   of: $('#mainMenu')   });
+					buildMenu('backgroundMenu', { my: "left+10 top-6", at: "right top",   of: $('#mainMenu')   });
+					buildMenu('tokenMenu',      { my: "left+10 top-6", at: "right top",   of: $('#mainMenu')   });
+					buildMenu('diceMenu',       { my: "left bottom-5", at: "left top",    of: $('#diceButton') }, 'down');
 					
 					var process = (res) => {
 						$('#mainMenu').dialog('close');
@@ -147,19 +151,38 @@
 				};
 				webSocket.onmessage = function(event) {
 					var obj = JSON.parse(event.data) ;
-					if (obj.success == true && obj.objects != undefined && obj.object != {}) {
+					if (obj.action == 'boardUpdate' && obj.success == true && obj.objects != undefined && obj.object != {}) {
 						processBoard(obj.objects);
 					};
+					if (obj.action == 'diceRoll' && obj.success == true) {
+						window.box.startRoll(obj.dice + "@" + obj.number)
+					}
 				};
 				
+				var diceWrap = (dice) => {
+					$('#diceMenu').dialog('close');
+					$.post('/getRandomNumber', {playmat:id ,dice: dice, player: pname}, (res) => {
+						var obj = JSON.parse(res) ;
+						window.box.startRoll(obj.dice + "@" + obj.number);
+					});
+				};	
+				
+				$('#dice1d4'  ).on().click(function() { diceWrap('1d4')});
+				$('#dice1d6'  ).on().click(function() { diceWrap('1d6')});
+				$('#dice1d8'  ).on().click(function() { diceWrap('1d8')});
+				$('#dice1d10' ).on().click(function() { diceWrap('1d10')});
+				$('#dice1d12' ).on().click(function() { diceWrap('1d12')});
+				$('#dice1d20' ).on().click(function() { diceWrap('1d20')});
+				$('#dice1d100').on().click(function() { diceWrap('1d100')});
 
 			});
 		</script>
 	</head>
 	<body>
 		<input id="playmatId" type="hidden" value="-1"/>
-		<div class="hamburguer" id="mainButton">&#9776;</div>
-		<div class="dialog" id="mainMenu" style="display: none">
+		<div class="hamburguer hamburguer-top"    id="mainButton">&#9776;</div>
+		<div class="hamburguer hamburguer-bottom" id="diceButton">&#127922;</div>
+		<div class="dialog" id="mainMenu" style="display: none" parentMenu="none">
 			<div class="menuSelection" id="playmatButton"   >Playmat info</div>
 			<div class="menuSelection" id="backgroundButton">Background</div>
 			<div class="menuSelection" id="tokenButton"     >Tokens</div>
@@ -183,5 +206,17 @@
 			<div class="menuSelection" id="existTokenButton"  >Use an existing token</div>
 			<div class="menuPlaceholder"                           >&nbsp;</div>
 		</div>
+		<div class="dialog" id="diceMenu" style="display: none" parentMenu="none">
+			<div class="menuSelection" id="dice1d4"  ><img class="diceImage" src="d4.png"   /><span class="diceText">1D4</span></div>
+			<div class="menuSelection" id="dice1d6"  ><img class="diceImage" src="d6.png"   /><span class="diceText">1D6</span></div>
+			<div class="menuSelection" id="dice1d8"  ><img class="diceImage" src="d8.png"   /><span class="diceText">1D8</span></div>
+			<div class="menuSelection" id="dice1d10" ><img class="diceImage" src="d10.png"  /><span class="diceText">1D10</span></div>
+			<div class="menuSelection" id="dice1d12" ><img class="diceImage" src="d12.png"  /><span class="diceText">1D12</span></div>
+			<div class="menuSelection" id="dice1d20" ><img class="diceImage" src="d20.png"  /><span class="diceText">1D20</span></div>
+			<div class="menuSelection" id="dice1d100"><img class="diceImage" src="d100.png" /><span class="diceText">1D100</span></div>
+			<div class="menuSelection" id="diceinitiativeButton">Roll for initiative</div>
+			<div class="menuSelection" id="addNewDice">Add custom roll</div>
+		</div>
+		<div id="rollWindow"></div>
 	</body>
 </html>

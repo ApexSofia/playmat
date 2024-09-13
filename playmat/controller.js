@@ -43,12 +43,14 @@ exports.upload = function(req,res) {
 		db.register(fields.playmat, fields.fileName, fields.fileName + extension, fields.type, fields.x, fields.y, (obj => { 
 			if (obj.sucess == false ) {
 				fs.unlink(filepath, function() {
+					obj.action = 'boardUpdate';
 					var payload = JSON.stringify(obj) ;
 					bcast.cast(fields.playmat, payload);
 					res.end(payload); 
 				});
 			} else {
 				fs.rename(filepath, newpath, function () {
+					obj.action = 'boardUpdate';
 					var payload = JSON.stringify(obj) ;
 					bcast.cast(fields.playmat, payload);
 					res.end(payload); 
@@ -61,6 +63,7 @@ exports.upload = function(req,res) {
 exports.importFromWeb = function(req,res) {
 	var db = new DB();
 	db.register(req.body.playmat, req.body.fileName, req.body.url, req.body.type, req.body.x, req.body.y, (obj) => { 
+		obj.action = 'boardUpdate';
 		var payload = JSON.stringify(obj) ;
 		bcast.cast(req.body.playmat, payload);
 		res.end(payload); 
@@ -72,6 +75,7 @@ exports.updateObject = function(req,res) {
 	var db = new DB();
 	if (req.body.local == false) {
 		db.updateObject(req.body.oldAlias, req.body.newAlias, req.body.type, (obj) => { 
+			obj.action = 'boardUpdate';
 			var payload = JSON.stringify(obj) ;
 			bcast.cast(req.body.playmat, payload);
 			res.end(payload); 
@@ -79,6 +83,7 @@ exports.updateObject = function(req,res) {
 	} else {
 		fs.rename('assets/'+req.body.oldFile, 'assets/'+req.body.newFile, () => {
 			db.updateObject(req.body.oldAlias, req.body.newAlias, req.body.newFile, req.body.type, (obj) => { 
+				obj.action = 'boardUpdate';
 				var payload = JSON.stringify(obj) ;
 				bcast.cast(req.body.playmat, payload);
 				res.end(payload); 
@@ -92,6 +97,7 @@ exports.deleteObject = function(req,res) {
 	var db = new DB();
 	if (req.body.local == false) {
 		db.deleteObject(req.body.alias, req.body.type, (obj) => { 
+			obj.action = 'boardUpdate';
 			var payload = JSON.stringify(obj) ;
 			bcast.cast(req.body.playmat, payload);
 			res.end(payload); 
@@ -99,6 +105,7 @@ exports.deleteObject = function(req,res) {
 	} else {
 		fs.unlink('assets/'+req.body.file, () => {
 			db.deleteObject(req.body.alias, req.body.type, (obj) => { 
+				obj.action = 'boardUpdate';
 				var payload = JSON.stringify(obj) ;
 				bcast.cast(req.body.playmat, payload);
 				res.end(payload); 
@@ -110,6 +117,7 @@ exports.deleteObject = function(req,res) {
 exports.reuseObject =  function(req,res) {
 	var db = new DB();
 	db.reuseObject(req.body.playmat, req.body.alias, req.body.x, req.body.y, (obj) => { 
+		obj.action = 'boardUpdate';
 		var payload = JSON.stringify(obj) ;
 		bcast.cast(req.body.playmat, payload);
 		res.end(payload); 
@@ -119,6 +127,7 @@ exports.reuseObject =  function(req,res) {
 exports.updateToken = function(req,res) {
 	var db = new DB();
 	db.updateToken(req.body.playmat, req.body.id, req.body.scale, req.body.opacity, req.body.rotate, req.body.mirror, req.body.x, req.body.y, (obj) => { 
+		obj.action = 'boardUpdate';
 		var payload = JSON.stringify(obj) ;
 		bcast.cast(req.body.playmat, payload);
 		res.end(payload); 
@@ -128,6 +137,7 @@ exports.updateToken = function(req,res) {
 exports.deleteToken = function(req,res) {
 	var db = new DB();
 	db.deleteToken(req.body.playmat, req.body.id, (obj) => { 
+		obj.action = 'boardUpdate';
 		var payload = JSON.stringify(obj) ;
 		bcast.cast(req.body.playmat, payload);
 		res.end(payload); 
@@ -137,10 +147,35 @@ exports.deleteToken = function(req,res) {
 exports.getObjects = function(req, res) {
 	var db = new DB();
 	db.getObjects(req.body.type, (obj) => { 
+		obj.action = 'boardUpdate';
 		var payload = JSON.stringify(obj) ;
 		bcast.cast(req.body.playmat, payload);
 		res.end(payload); 
 	});
+}
+
+exports.getRandomNumber = function(req, res) {
+	var db = new DB();
+	var dice = req.body.dice + '' ;
+	dice = dice.toLowerCase();
+	var num = parseInt(dice.substring(0,dice.indexOf('d')));
+	var faces = parseInt(dice.substring(dice.indexOf('d')+1));
+	db.getRandomNumber(1,faces, (obj) => {
+		if (dice == '1d100') {
+			dice = '1d100+1d10';
+			var num = parseInt(obj.number);
+			if (num == 100) {
+				num = 0 ;
+			}
+			obj.number = parseInt(Math.floor(num / 10)) + ',' + parseInt(num % 10) ;
+		}
+		obj.dice = dice ;
+		obj.action = 'diceRoll' ;
+		obj.player = req.body.player ;
+		var payload = JSON.stringify(obj) ;
+		bcast.cast(req.body.playmat, payload);
+		res.end(payload); 
+	})
 }
 
 exports.table = function(req,res) {
