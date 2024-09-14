@@ -164,9 +164,10 @@
 						processBoard(obj.objects);
 					};
 					if (obj.action == 'diceRoll' && obj.success == true && obj.player != pname) {
-						window.box.startRoll(obj.dice + "@" + obj.number,() => {
+						window.box.startRoll(obj.dice + "@" + obj.number);
+						setTimeout(() => {
 							addLog(obj.player + ' rolled a '+obj.diceFace+' and got a '+obj.rawNumber+'!');
-						});
+						},3000);
 					}
 					if (obj.action == 'chatMessage' && obj.success == true && obj.player != pname) {
 						addLog(obj.player + ' said "' + escapeHtml(obj.message) + '".');
@@ -177,9 +178,10 @@
 					$('#diceMenu').dialog('close');
 					$.post('/getRandomNumber', {playmat:id ,dice: dice, player: pname}, (res) => {
 						var obj = JSON.parse(res) ;
-						window.box.startRoll(obj.dice + "@" + obj.number,() => {
+						window.box.startRoll(obj.dice + "@" + obj.number);
+						setTimeout(() => {
 							addLog('You rolled a '+obj.diceFace+' and got a '+obj.rawNumber+'!');
-						});
+						},3000);
 					});
 				};	
 				

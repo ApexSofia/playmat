@@ -14,17 +14,15 @@ const Box = new DiceBox('#rollWindow', {
 	onRollComplete: (results) => {
 		//console.log("I've got results :>> ", results);
 		setTimeout(() => {
-			$('#rollWindow').fadeOut('slow');
+			$('#rollWindow').animate({ opacity: 0 }, () => { Box.clearDice(); });
 		}, 2000);
 		if (Box.onComplete != undefined) {
 			Box.onComplete() ;
 		}
 	},
 	startRoll: (param, onComplete) => { 
-		Box.clearDice();
-		$('#rollWindow').fadeIn('slow', () => {
-			Box.roll(param)
-		});
+		$('#rollWindow').css('opacity', 1);
+		Box.roll(param)
 		if (onComplete != undefined) {
 			Box.onComplete = onComplete ;
 		}
@@ -32,6 +30,6 @@ const Box = new DiceBox('#rollWindow', {
 });
 
 Box.initialize().then(() => {
-	$('#rollWindow').hide();
+	//$('#rollWindow').hide();
 });
 window.box = Box ;
