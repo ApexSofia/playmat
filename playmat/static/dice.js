@@ -16,12 +16,18 @@ const Box = new DiceBox('#rollWindow', {
 		setTimeout(() => {
 			$('#rollWindow').fadeOut('slow');
 		}, 2000);
+		if (Box.onComplete != undefined) {
+			Box.onComplete() ;
+		}
 	},
-	startRoll: (param) => { 
+	startRoll: (param, onComplete) => { 
 		Box.clearDice();
 		$('#rollWindow').fadeIn('slow', () => {
 			Box.roll(param)
 		});
+		if (onComplete != undefined) {
+			Box.onComplete = onComplete ;
+		}
 	}
 });
 

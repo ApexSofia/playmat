@@ -200,7 +200,40 @@ var toggleMenu = function(dialogName) {
 	}						
 };
 
-//var randomG
+addLog = function(message) {
+	if (window.textId == undefined) {
+		window.textId = 0 ; 
+	}
+	window.textId = window.textId + 1;
+	var id = 'textlog'+window.textId ;
+	$('body').append('<div id="'+id+'" class="textLog" style="display: none; bottom: 50px;"><p>'+message+'</p></div>');
+	$('.textLog').not('#'+id).each((index, element) => {
+		var bottom = $(element).css('bottom')+ '' ;
+		bottom.replace('px','');
+		bottom = (parseInt(bottom) + $('#'+id).height()) + 'px'
+		$(element).css('bottom', bottom);
+	});
+	$('#'+id).fadeIn(300);
+	setTimeout(() => { $('#'+id).fadeOut(600); }, 15000);
+	
+	$('#actualLog').prepend('<p>' + message + '</p>')
+}
+
+function escapeHtml (string) {
+	var entityMap = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#39;',
+		'/': '&#x2F;',
+		'`': '&#x60;',
+		'=': '&#x3D;'
+	};
+	return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+		return entityMap[s];
+	});
+}
 
 var exists = function(element) {
 	return $(element).length > 0 ;

@@ -14,5 +14,6 @@ module.exports = function(router){
 	router.post('/deleteToken',     controller.deleteToken);
 	router.post('/getObjects',      controller.getObjects);
 	router.post('/getRandomNumber', controller.getRandomNumber);
+	router.post('/chat',            controller.chat);
 	router.post('/table.html',      controller.table);
 };

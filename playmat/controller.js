@@ -161,6 +161,8 @@ exports.getRandomNumber = function(req, res) {
 	var num = parseInt(dice.substring(0,dice.indexOf('d')));
 	var faces = parseInt(dice.substring(dice.indexOf('d')+1));
 	db.getRandomNumber(1,faces, (obj) => {
+		obj.diceFace = dice ;
+		obj.rawNumber = obj.number ;
 		if (dice == '1d100') {
 			dice = '1d100+1d10';
 			var num = parseInt(obj.number);
@@ -176,6 +178,18 @@ exports.getRandomNumber = function(req, res) {
 		bcast.cast(req.body.playmat, payload);
 		res.end(payload); 
 	})
+}
+
+exports.chat = function(req, res) {
+	var obj = { 
+		success: true,
+		action: 'chatMessage',
+		message: req.body.message,
+		player: req.body.player
+	} ;
+	var payload = JSON.stringify(obj) ;
+	bcast.cast(req.body.playmat, payload);
+	res.end(payload); 
 }
 
 exports.table = function(req,res) {

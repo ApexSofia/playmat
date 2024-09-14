@@ -54,6 +54,15 @@
 					buildMenu('backgroundMenu', { my: "left+10 top-6", at: "right top",   of: $('#mainMenu')   });
 					buildMenu('tokenMenu',      { my: "left+10 top-6", at: "right top",   of: $('#mainMenu')   });
 					buildMenu('diceMenu',       { my: "left bottom-5", at: "left top",    of: $('#diceButton') }, 'down');
+					buildMenu('logMenu',        { my: "right bottom-5", at: "right top",  of: $('#logButton')  }, 'down');
+					
+					//var position = $(this).attr('data-position');
+					/*$("#chat").position({
+						my: "left+5 bottom-45",
+						at: "left bottom",
+						of: '#logWindow',
+						within: '#logWindow'
+					});*/
 					
 					var process = (res) => {
 						$('#mainMenu').dialog('close');
@@ -154,8 +163,13 @@
 					if (obj.action == 'boardUpdate' && obj.success == true && obj.objects != undefined && obj.object != {}) {
 						processBoard(obj.objects);
 					};
-					if (obj.action == 'diceRoll' && obj.success == true) {
-						window.box.startRoll(obj.dice + "@" + obj.number)
+					if (obj.action == 'diceRoll' && obj.success == true && obj.player != pname) {
+						window.box.startRoll(obj.dice + "@" + obj.number,() => {
+							addLog(obj.player + ' rolled a '+obj.diceFace+' and got a '+obj.rawNumber+'!');
+						});
+					}
+					if (obj.action == 'chatMessage' && obj.success == true && obj.player != pname) {
+						addLog(obj.player + ' said "' + escapeHtml(obj.message) + '".');
 					}
 				};
 				
@@ -163,9 +177,27 @@
 					$('#diceMenu').dialog('close');
 					$.post('/getRandomNumber', {playmat:id ,dice: dice, player: pname}, (res) => {
 						var obj = JSON.parse(res) ;
-						window.box.startRoll(obj.dice + "@" + obj.number);
+						window.box.startRoll(obj.dice + "@" + obj.number,() => {
+							addLog('You rolled a '+obj.diceFace+' and got a '+obj.rawNumber+'!');
+						});
 					});
 				};	
+				
+				var sendChat = function() {
+					var message = $('#chat').val();
+					$('#chat').val('');
+					if (message != undefined && message != '') {
+						$.post('/chat', {playmat:id , message: message, player: pname}, (res) => {
+							addLog('You said "' + escapeHtml(message) + '".');
+						});
+					}
+				}
+				$('#sendChat').on().click(sendChat);
+				$('#chat').on().keypress((event) => {
+					if (event.which == 13) {
+						sendChat();
+					}
+				})
 				
 				$('#dice1d4'  ).on().click(function() { diceWrap('1d4')});
 				$('#dice1d6'  ).on().click(function() { diceWrap('1d6')});
@@ -182,6 +214,7 @@
 		<input id="playmatId" type="hidden" value="-1"/>
 		<div class="hamburguer hamburguer-top"    id="mainButton">&#9776;</div>
 		<div class="hamburguer hamburguer-bottom" id="diceButton">&#127922;</div>
+		<div class="hamburguer hamburguer-right"  id="logButton" >&#128462;</div>
 		<div class="dialog" id="mainMenu" style="display: none" parentMenu="none">
 			<div class="menuSelection" id="playmatButton"   >Playmat info</div>
 			<div class="menuSelection" id="backgroundButton">Background</div>
@@ -216,6 +249,16 @@
 			<div class="menuSelection" id="dice1d100"><img class="diceImage" src="d100.png" /><span class="diceText">1D100</span></div>
 			<div class="menuSelection" id="diceinitiativeButton">Roll for initiative</div>
 			<div class="menuSelection" id="addNewDice">Add custom roll</div>
+		</div>
+		<div class="dialog" id="logMenu" style="display: none" parentMenu="none">
+			<div class="logWindow" id="logWindow" style="">
+				<div id="actualLog"></div>
+				<div class="chatWrapper">
+					<input type="text" id="chat" />
+					<button type="button" class="ui-button ui-corner-all ui-widget" id="sendChat" />
+					<label for="sendChat" id="chatLabel" />Send</label>
+				</div>
+			</div>
 		</div>
 		<div id="rollWindow"></div>
 	</body>
