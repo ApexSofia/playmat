@@ -5,11 +5,33 @@ class DB_sqlite3 {
 	
 	constructor() {
 		this.playmatCreate= "CREATE TABLE IF NOT EXISTS playmat_list (\n"+
-							"creation DATE         NOT NULL,\n"+
-							"name     VARCHAR(100) NOT NULL,\n"+
-							"password VARCHAR(100) NOT NULL,\n"+
+							"creation DATE         NOT NULL, \n"+
+							"name     VARCHAR(100) NOT NULL, \n"+
+							"password VARCHAR(100) NOT NULL, \n"+
+							"guests   INT          NOT NULL, \n"+
 							"UNIQUE   (name))";
-						
+							
+		this.userCreate   = "CREATE TABLE IF NOT EXISTS users (\n"+
+							"creation DATE         NOT NULL, \n"+
+							"name     VARCHAR(100) NOT NULL, \n"+
+							"password VARCHAR(100) NOT NULL, \n"+
+							"email    VARCHAR(100) NOT NULL, \n"+
+							"verified INT          NOT NULL, \n"+
+							"creator  INT          NOT NULL, \n"+
+							"UNIQUE   (email))";
+							
+		this.playUserCreate="CREATE TABLE IF NOT EXISTS playmat_users (\n"+
+							"creation DATE         NOT NULL, \n"+
+							"playmat  INT          NOT NULL, \n"+
+							"user     INT          NOT NULL, \n"+
+							"owner    INT          NOT NULL, \n"+
+							"alias    VARCHAR(100) NOT NULL, \n"+
+							"color    VARCHAR(16)          , \n"+
+							"pattern  VARCHAR(16)          , \n"+
+							"FOREIGN KEY(playmat) REFERENCES playmat_list(rowid),\n"+
+							"FOREIGN KEY(playmat) REFERENCES users(rowid),\n"+
+							"UNIQUE   (playmat, user))";
+							
 		this.objectsCreate= "CREATE TABLE IF NOT EXISTS objects (\n"+
 							"creation DATE         NOT NULL, \n"+
 							"alias    VARCHAR(100) NOT NULL, \n"+
@@ -17,7 +39,7 @@ class DB_sqlite3 {
 							"type     VARCHAR(20)  NOT NULL, \n"+
 							"UNIQUE   (alias),\n"+
 							"UNIQUE   (name))";
-						
+							
 		this.playObjCreate= "CREATE TABLE IF NOT EXISTS playmat_objects (\n"+
 							"creation DATE         NOT NULL, \n"+
 							"playmat  INT          NOT NULL, \n"+
@@ -31,7 +53,7 @@ class DB_sqlite3 {
 							"y        INT          NOT NULL, \n"+
 							"FOREIGN KEY(playmat) REFERENCES playmat_list(rowid),\n"+
 							"FOREIGN KEY(object)  REFERENCES objects(rowid))";
-						
+							
 		this.getAllObjects= "SELECT playmat_objects.rowid, \n"+
 							"       playmat_objects.type, \n"+
 							"       playmat_objects.scale, \n"+
@@ -108,13 +130,13 @@ class DB_sqlite3 {
 	
 	queryPlaymatList(callback) {
 		this.set('queryPlaymatList', callback);
-		var getPlaymats = "SELECT name FROM playmat_list ORDER BY creation" ;
+		var getPlaymats = "SELECT rowid, name, guests FROM playmat_list ORDER BY creation" ;
 		var res = { success: true, playmats: [] } ;
 		this.db.serialize(() => {
-			this.run('run', this.playmatCreate);
+			this.run('run', this.playmatCreate); 
 			this.run('all' ,getPlaymats, [], (rows) => {
 				rows.forEach((row) => {
-					res.playmats.push({ name: row.name });
+					res.playmats.push({ name: row.name, id: row.rowid, guests: row.guests });
 				});
 				callback (res);
 			});
@@ -122,13 +144,13 @@ class DB_sqlite3 {
 		this.close();
 	}
 	
-	createPlaymat(name, password, callback) {
+	createPlaymat(name, password, guest, callback) {
 		this.set('createPlaymat', callback);
-		var insertPlaymat = "INSERT INTO playmat_list (creation, name, password) "+
-		                    "VALUES (DateTime('now'),?,?)" ; 
+		var insertPlaymat = "INSERT INTO playmat_list (creation, name, password, guests) "+
+		                    "VALUES (DateTime('now'),?,?,?)" ; 
 		this.db.serialize(() => {
 			this.run('run' ,this.playmatCreate);
-			this.run('run' ,insertPlaymat, [name, password], (row) => {
+			this.run('run' ,insertPlaymat, [name, password, guest], (row) => {
 				callback({ success: true });
 			});
 		});
@@ -352,13 +374,13 @@ class DB_sqlite3 {
 	
 	joinPlaymat(name, password, user, callback) {
 		this.set('joinPlaymat', callback);
-		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name=? AND password=?" ; 
+		var checkPlaymat = "SELECT rowid FROM playmat_list WHERE name=? AND (password=? OR guests=?)" ; 
 		var res = { success: true, objects:[], id: -1} ;
 		this.db.serialize(() => {
 			this.run('run', this.playmatCreate);
 			this.run('run', this.objectsCreate);
 			this.run('run', this.playObjCreate);
-			this.run('get', checkPlaymat, [name, password], (row) => {
+			this.run('get', checkPlaymat, [name, password, 1], (row) => {
 				if (row == undefined) {
 					callback({ success: false, error : 'Incorrect password'}) ;
 					this.close();

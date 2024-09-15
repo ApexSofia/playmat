@@ -10,7 +10,7 @@ exports.getAllPlaymats = function(req,res) {
 
 exports.createPlaymat = function(req,res) {
 	var db = new DB() ;
-	db.createPlaymat(req.body.playmat, req.body.password, (obj) => { res.end(JSON.stringify(obj)) });
+	db.createPlaymat(req.body.playmat, req.body.password, req.body.guest, (obj) => { res.end(JSON.stringify(obj)) });
 };
 
 exports.updatePlaymat = function(req,res) {
@@ -192,6 +192,42 @@ exports.chat = function(req, res) {
 	res.end(payload); 
 }
 
+exports.index = function(req,res) {
+	var isLegacy = true ;
+	var isLogged = false ;
+	let fs = require('fs');
+	fs.readFile('./dynamic/index.html', 'utf8', (err, data) => {
+		var nonLoggedCode = data.indexOf('// Non-logged users') ;
+		var loggedCode    = data.indexOf('// Logged users') ;
+		var legacyCode    = data.indexOf('// Legacy code') ;
+		var endCode       = data.indexOf('// End') ;
+		var nonLogged     = data.indexOf('<!-- Non-logged users -->') ;
+		var logged        = data.indexOf('<!-- Logged users -->') ;
+		var legacy        = data.indexOf('<!-- Legacy code -->') ;
+		var end           = data.indexOf('<!-- End -->') ;
+		var text1 = data.substring(0, nonLogged);
+		if (isLegacy) {
+			text1 = text1 + data.substring(legacy, end);
+		} else if (isLogged) {
+			text1 = text1 + data.substring(logged, legacy);
+		} else {
+			text1 = text1 + data.substring(nonLogged, logged);
+		}
+		text1 = text1  + data.substring (end);
+		
+		var text2 = text1.substring(0, nonLoggedCode);
+		if (isLegacy) {
+			text2 = text2 + text1.substring(legacyCode, endCode);
+		} else if (isLogged) {
+			text2 = text2 + text1.substring(loggedCode, legacyCode);
+		} else {
+			text2 = text2 + text1.substring(nonLoggedCode, loggedCode);
+		}
+		text2 = text2  + text1.substring (endCode);
+		res.end(text2);
+	});
+}
+
 exports.table = function(req,res) {
 	let fs = require('fs');
 	var sanitize = (text) => {
@@ -201,11 +237,14 @@ exports.table = function(req,res) {
 		return '<input id="'+name+'" type="hidden" value="'+value+'"/>';
 	};
 	var db = new DB();
+	if (req.body.playmatPass == undefined) {
+		req.body.playmatPass = '';
+	}
 	db.joinPlaymat(req.body.playmatName, req.body.playmatPass, req.body.playerName, (obj) => {
 		if (obj.success == false) {
 			res.send(obj.error);
 		} else {
-			fs.readFile('./static/table.html', 'utf8', (err, data) => {
+			fs.readFile('./dynamic/table.html', 'utf8', (err, data) => {
 				if (err) {
 					res.send(err);
 				} else {

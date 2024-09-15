@@ -15,5 +15,9 @@ module.exports = function(router){
 	router.post('/getObjects',      controller.getObjects);
 	router.post('/getRandomNumber', controller.getRandomNumber);
 	router.post('/chat',            controller.chat);
+	router.get ('/',                controller.index);
+	router.post('/',                controller.index);
+	router.get ('/index.html',      controller.index);
+	router.post('/index.html',      controller.index);
 	router.post('/table.html',      controller.table);
 };

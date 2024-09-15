@@ -13,6 +13,11 @@ body {
 	margin: auto;
 	width: fit-content;
 	height: fit-content;
+	display: flex;
+	flex-direction: row ;
+	flex-wrap: wrap;
+	justify-content: center ;
+	align-items: stretch;
 }
 
 .coolButton {
@@ -24,10 +29,17 @@ body {
 	margin: 10px;
 	cursor: pointer;
 	box-shadow: 5px 5px 10px #553399;
+	min-width: 220px;
+	text-shadow: 2px 2px 2px rgba(180,160,250,0.7);
 }
 
 .coolButton:hover {
-	background-color: #2e528c ;
+	//background-color: #2e528c ;
+	background: linear-gradient(75deg, rgba(143,143,227,1) 0%, rgba(46,82,140,1) 100%);
+}
+
+.dialog > input {
+	width: -webkit-fill-available;
 }
 
 .spinner {

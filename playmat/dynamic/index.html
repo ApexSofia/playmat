@@ -1,0 +1,218 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Playmat for role playing games</title>
+		<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+		<script src="./helper.js"></script>
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-darkness/jquery-ui.css">
+		<link rel="stylesheet" type="text/css" href="./style.css">
+		<link rel="icon" type="image/x-icon" href="favicon.ico">
+		<script>
+			$(function(){			
+				var createDialog = (buttonId, dialogId, title, buttons, action) => {
+					if (buttons == undefined) {
+						buttons = [] ;
+					}
+					buttons.push({
+						text:'Cancel',
+						modal: true,
+						click: () => {
+							$("#"+dialogId).dialog("close");
+						}
+					});
+					$("#"+buttonId).on("click",function(){
+						$(".dialog").each((index,dig) => {
+							try {$(dig).dialog("close");} catch(e) {};
+						});
+						$("#"+dialogId).dialog({
+							title: title,
+							width: '400px',
+							show: { 
+								effect: "fadeIn", duration: 600 
+							},
+							buttons: buttons
+						});
+					});
+					if (action != undefined) {
+						action();
+					}
+				}
+				
+				// Non-logged users
+				
+				createDialog('signInButton', 'signInDialog', 'Sign in as a new user');
+				createDialog('logInButton' , 'logInDialog' , 'Log in as an existing user');
+				createDialog('guestButton' , 'guestDialog' , 'Join a public table as guest.',[{
+					text:'Join',
+					click: function() {
+						if (check(['guestUser','guestTable'])) {
+							$('#guestDialog').submit();
+						} else {
+							betterAlert('Incomplete information');
+						}
+					}
+				}],() => {
+					$('#guestSpinner').show();
+					$('#guestTable').empty();
+					$.get('/getAllPlaymats',function(data){
+						$('#guestSpinner').hide();
+						data = JSON.parse(data);
+						for (var i = 0 ; i < data.playmats.length ; i++) {
+							if (data.playmats[i].guests == 1) {
+								$('#guestTable').append('<option value="'+ data.playmats[i].name +'">'+ data.playmats[i].name + '</option>');
+							}
+						}
+					});
+				});
+				
+				// Logged users
+				
+				// Legacy code
+				
+				createDialog('createButton', 'createDialog', 'Create new playmat',[{
+					text:'Create',
+					modal: true,
+					click: function() {
+						if (check(['createName','createPass','createUser'])) {
+							$.post('/createPlaymat', 
+								{ 
+									playmat:  $('#createName').val(), 
+									password: $('#createPass').val(),
+									guest: 0
+								},
+								function (data) {
+									data = JSON.parse(data);
+									if (data.success == false) {
+										betterAlert(data.error);
+									} else {
+										$('#createDialog').submit();
+									}
+								});
+						} else {
+							betterAlert('Incomplete information');
+						}
+					}
+				}]);
+				
+				createDialog('joinButton', 'joinDialog', 'Join an existing playmat',[{
+					text:'Join',
+					click: function() {
+						if (check(['joinPlaymat','joinPass','joinUser'])) {
+							$.post('/checkPassword', 
+								{ 
+									playmat:  $('input[type=radio]:checked').val(), 
+									password: $('#joinPass').val()
+								},
+								function (data) {
+									data = JSON.parse(data);
+									if (data.success == false) {
+										betterAlert(data.error);
+									} else {
+										$('#joinDialog').submit();
+									}
+								});
+						} else {
+							betterAlert('Incomplete information');
+						}
+					}
+				}],
+				() => {
+					$('#joinSpinner').show();
+					$('#joinList').empty();
+					$.get('/getAllPlaymats',function(data){
+						$('#joinSpinner').hide();
+						var dat = JSON.parse(data);
+						$('#joinList').empty();
+						for (var i = 0 ; i < dat.playmats.length ; i++) {
+							var name = dat.playmats[i].name ;
+							var html = '<input type="radio" ' ;
+							if (i == 0) {
+								html = html + 'id="joinPlaymat" ';
+							}
+							html = html +     'name="playmatName" '+
+											  'value="'+name+'">'+name+
+									   '</input><br/>'
+							$('#joinList').append(html);
+						}
+					});
+				});
+				
+				// End
+			});
+		</script>
+	</head>
+	<body>
+		<!-- Non-logged users -->
+		<div class="menuCenter">
+			<button class="coolButton" id="signInButton">Sign in</button>
+			<button class="coolButton" id="logInButton" >Log in</button>
+			<button class="coolButton" id="guestButton" >Join as guest</button>
+		</div>
+		
+		<form class="dialog" id="signInDialog" style="display: none" method="post" action="index.html">
+			<label for="signInName">Player name</label><br/>
+			<input id ="signInName" name="signInPlayerName"><br/><br/>
+			<label for="signInEmail">Email</label><br/>
+			<input id ="signInEmail" name="signInEmail"><br/><br/>
+			<label for="signInPassword">Password</label><br/>
+			<input id ="signInPassword" name="signInPassword" type="password"><br/><br/>
+			<label for="signInPassConfirm">Confirm password</label><br/>
+			<input id ="signInPassConfirm" name="signInPassConfirm" type="password"><br/><br/>
+		</form>
+		
+		<form class="dialog" id="logInDialog" style="display: none" method="post" action="index.html">
+			<label for="logInEmail">Email</label><br/>
+			<input id ="logInEmail" name="logInEmail"><br/><br/>
+			<label for="logInPassword">Password</label><br/>
+			<input id ="logInPassword" name="logInPassword" type="password"><br/><br/>
+		</form>
+		
+		<form class="dialog" id="guestDialog" style="display: none" method="post" action="table.html">
+			<label for="guestUser">Player name</label><br/>
+			<input id ="guestUser" name="playerName"><br/><br/>
+			<label for="guestTable">Table</label><br/>
+			<div style="display: flex; column-gap:10px">
+				<select style="flex-grow:1" id="guestTable" name="playmatName"></select>
+				<img id="guestSpinner" style="flex-grow:0" src="loader.gif" class="spinner"/><br/>
+			</div>
+		</form>
+		
+		<!-- Logged users -->
+		<div class="menuCenter">
+			<button class="coolButton" id="createNewButton"   >Create new table</button>
+			<button class="coolButton" id="joinTableButton"   >Join table</button>
+			<button class="coolButton" id="userSettingsButton">User settings</button>
+			<button class="coolButton" id="adminUsersButton"  >Admin. users</button>
+			<button class="coolButton" id="adminTablesButton" >Admin. tables</button>
+			<button class="coolButton" id="logoutButton"      >Logout</button>
+		</div>
+		
+		<!-- Legacy code -->
+		<div class="menuCenter">
+			<button class="coolButton" id="createButton">Create a new playmat</button>
+			<button class="coolButton" id="joinButton"  >Join an existing playmat</button>
+		</div>
+		
+		<form class="dialog" id="createDialog" style="display: none" method="post" action="table.html">
+			<label for="createName">Playmat name</label><br/>
+			<input id ="createName" name="playmatName"><br/><br/>
+			<label for="createPass">Password</label><br/>
+			<input id ="createPass" name="playmatPass" type="password"><br/><br/>
+			<label for="createUser">Player name</label><br/>
+			<input id ="createUser" name="playerName"><br/><br/>
+		</form>
+		
+		<form class="dialog" id="joinDialog" style="display: none" method="post" action="table.html">
+			<label for="joinList">Playmat name</label><br/><br/>
+			<div id="joinList">
+			</div>
+			<img id="joinSpinner" src="loader.gif" class="spinner"/><br/>
+			<label for="joinPass">Password</label><br/>
+			<input id ="joinPass" name="playmatPass" type="password"><br/><br/>
+			<label for="joinUser">Player name</label><br/>
+			<input id ="joinUser" name="playerName">
+		</form>
+		<!-- End -->
+	</body>
+</html>
